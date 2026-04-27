@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         DAILY BATCH views
+         ============================================================ -->
+
+    <record id="view_elks_daily_batch_tree" model="ir.ui.view">
+        <field name="name">elks.daily.batch.tree</field>
+        <field name="model">elks.dues.deposit</field>
+        <field name="arch" type="xml">
+            <list string="Daily Batches"
+                  decoration-info="state == 'draft'"
+                  decoration-success="state == 'deposited'"
+                  decoration-warning="state == 'closed'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="batch_date"/>
+                <field name="name"/>
+                <field name="payment_count"/>
+                <field name="expected_total" sum="Total"/>
+                <field name="bank_deposit_id" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'closed'"
+                       decoration-success="state == 'deposited'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_daily_batch_form" model="ir.ui.view">
+        <field name="name">elks.daily.batch.form</field>
+        <field name="model">elks.dues.deposit</field>
+        <field name="arch" type="xml">
+            <form string="Daily Batch">
+                <header>
+                    <button name="action_post_and_close" type="object"
+                            string="Close Batch &amp; Post Payments"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="This will post all draft payments and lock the batch. Continue?"/>
+                    <button name="action_reopen" type="object"
+                            string="Re-open Batch"
+                            invisible="state != 'closed'"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel"
+                            invisible="state in ('deposited', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,closed,deposited"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="batch_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="prepared_by"/>
+                        </group>
+                        <group>
+                            <field name="payment_count"/>
+                            <field name="expected_total"/>
+                            <field name="bank_deposit_id"
+                                   invisible="not bank_deposit_id"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Payments">
+                            <field name="payment_ids"
+                                   readonly="state != 'draft'">
+                                <list>
+                                    <field name="payment_date"/>
+                                    <field name="partner_id"/>
+                                    <field name="member_number"/>
+                                    <field name="payment_type"/>
+                                    <field name="check_number"/>
+                                    <field name="amount_total" sum="Total"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"
+                                   placeholder="Batch notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_elks_daily_batch_search" model="ir.ui.view">
+        <field name="name">elks.daily.batch.search</field>
+        <field name="model">elks.dues.deposit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="batch_date"/>
+                <field name="name"/>
+                <separator/>
+                <filter name="open" string="Open"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="closed" string="Closed"
+                        domain="[('state', '=', 'closed')]"/>
+                <filter name="deposited" string="Deposited"
+                        domain="[('state', '=', 'deposited')]"/>
+                <filter name="undeposited" string="Undeposited"
+                        domain="[('state', 'in', ('draft', 'closed'))]"/>
+                <separator/>
+                <group>
+                    <filter name="group_state" string="State"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="group_date" string="Batch Date"
+                            context="{'group_by': 'batch_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Keep old XML ID as alias for backward compat -->
+    <record id="action_elks_dues_deposit" model="ir.actions.act_window">
+        <field name="name">Daily Batches</field>
+        <field name="res_model">elks.dues.deposit</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_daily_batch_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first daily batch
+            </p>
+            <p>
+                Daily batches collect payments received each day.
+                Close a batch to lock it, then add it to a Bank Deposit
+                when ready to go to the bank.
+            </p>
+        </field>
+    </record>
+
+
+    <!-- ============================================================
+         BANK DEPOSIT views
+         ============================================================ -->
+
+    <record id="view_elks_bank_deposit_tree" model="ir.ui.view">
+        <field name="name">elks.bank.deposit.tree</field>
+        <field name="model">elks.bank.deposit</field>
+        <field name="arch" type="xml">
+            <list string="Bank Deposits"
+                  decoration-info="state == 'draft'"
+                  decoration-warning="state == 'signed'"
+                  decoration-success="state == 'deposited'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="deposit_date"/>
+                <field name="name"/>
+                <field name="bank_reference"/>
+                <field name="batch_count"/>
+                <field name="expected_total" sum="Expected"/>
+                <field name="bank_confirmed_total" sum="Confirmed"/>
+                <field name="variance" sum="Variance"
+                       decoration-danger="variance != 0"/>
+                <field name="treasurer_id"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'signed'"
+                       decoration-success="state == 'deposited'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_bank_deposit_form" model="ir.ui.view">
+        <field name="name">elks.bank.deposit.form</field>
+        <field name="model">elks.bank.deposit</field>
+        <field name="arch" type="xml">
+            <form string="Bank Deposit">
+                <header>
+                    <button name="action_treasurer_sign_off" type="object"
+                            string="Treasurer Sign-Off"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_mark_received" type="object"
+                            string="Mark Received"
+                            invisible="state != 'signed'"
+                            class="btn-secondary"/>
+                    <button name="action_confirm_deposited" type="object"
+                            string="Confirm Deposited at Bank"
+                            class="btn-primary"
+                            invisible="state != 'signed'"
+                            confirm="This will permanently lock all linked batches. Continue?"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel"
+                            invisible="state in ('deposited', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,signed,deposited"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="deposit_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="bank_reference"/>
+                            <field name="prepared_by"/>
+                        </group>
+                        <group>
+                            <field name="batch_count"/>
+                            <field name="expected_total"/>
+                            <field name="bank_confirmed_total"
+                                   readonly="state == 'deposited'"/>
+                            <field name="variance"
+                                   decoration-danger="variance != 0"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Sign-Off"
+                           invisible="state == 'draft'">
+                        <group>
+                            <field name="treasurer_id" readonly="1"/>
+                            <field name="treasurer_sign_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="received_by"
+                                   readonly="state == 'deposited'"/>
+                            <field name="received_date" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Daily Batches">
+                            <field name="batch_ids"
+                                   readonly="state != 'draft'">
+                                <list>
+                                    <field name="batch_date"/>
+                                    <field name="name"/>
+                                    <field name="payment_count"/>
+                                    <field name="expected_total" sum="Total"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"
+                                   placeholder="Deposit notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_elks_bank_deposit_search" model="ir.ui.view">
+        <field name="name">elks.bank.deposit.search</field>
+        <field name="model">elks.bank.deposit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="deposit_date"/>
+                <field name="bank_reference"/>
+                <field name="treasurer_id"/>
+                <separator/>
+                <filter name="draft" string="Draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="signed" string="Signed Off"
+                        domain="[('state', '=', 'signed')]"/>
+                <filter name="deposited" string="Deposited"
+                        domain="[('state', '=', 'deposited')]"/>
+                <separator/>
+                <group>
+                    <filter name="group_state" string="State"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="group_month" string="Deposit Month"
+                            context="{'group_by': 'deposit_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_elks_bank_deposit" model="ir.actions.act_window">
+        <field name="name">Bank Deposits</field>
+        <field name="res_model">elks.bank.deposit</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_bank_deposit_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a bank deposit
+            </p>
+            <p>
+                Group closed daily batches into a bank deposit.
+                The Treasurer signs off, a runner receives it, and
+                it's confirmed once the bank processes it.
+            </p>
+        </field>
+    </record>
+
+
+    <!-- ============================================================
+         CASH ON HAND views
+         ============================================================ -->
+
+    <record id="view_elks_cash_on_hand_tree" model="ir.ui.view">
+        <field name="name">elks.cash.on.hand.tree</field>
+        <field name="model">elks.cash.on.hand</field>
+        <field name="arch" type="xml">
+            <list string="Cash On Hand Counts"
+                  decoration-info="state == 'draft'"
+                  decoration-success="state == 'done' and not has_variance"
+                  decoration-danger="state == 'done' and has_variance"
+                  decoration-muted="state == 'cancelled'">
+                <field name="count_date"/>
+                <field name="count_type"/>
+                <field name="expected_cash"/>
+                <field name="counted_total"/>
+                <field name="variance"
+                       decoration-danger="has_variance"/>
+                <field name="counted_by"/>
+                <field name="witnessed_by"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_cash_on_hand_form" model="ir.ui.view">
+        <field name="name">elks.cash.on.hand.form</field>
+        <field name="model">elks.cash.on.hand</field>
+        <field name="arch" type="xml">
+            <form string="Cash On Hand Count">
+                <header>
+                    <button name="action_refresh_expected" type="object"
+                            string="Refresh Expected Total"
+                            invisible="state != 'draft'"
+                            class="btn-secondary"/>
+                    <button name="action_finalize" type="object"
+                            string="Finalize Count"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="This will lock the count. Continue?"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel"
+                            invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Count Details">
+                            <field name="count_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="count_type"
+                                   readonly="state != 'draft'"/>
+                            <field name="counted_by"
+                                   readonly="state != 'draft'"/>
+                            <field name="witnessed_by"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Expected vs. Counted">
+                            <field name="expected_cash"/>
+                            <field name="counted_total"/>
+                            <field name="variance"
+                                   decoration-danger="has_variance"/>
+                            <field name="has_variance" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Physical Count"
+                           readonly="state != 'draft'">
+                        <group>
+                            <field name="counted_cash"/>
+                            <field name="counted_checks"/>
+                            <field name="counted_other"/>
+                        </group>
+                    </group>
+
+                    <group string="Variance Resolution"
+                           invisible="not has_variance">
+                        <field name="variance_explanation"
+                               placeholder="Explain the discrepancy..."
+                               readonly="state != 'draft'"/>
+                        <field name="adjustment_amount"
+                               invisible="state != 'done'"/>
+                        <field name="adjustment_date"
+                               invisible="state != 'done'"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Notes">
+                            <field name="note"
+                                   placeholder="Count notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_elks_cash_on_hand_search" model="ir.ui.view">
+        <field name="name">elks.cash.on.hand.search</field>
+        <field name="model">elks.cash.on.hand</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="count_date"/>
+                <field name="counted_by"/>
+                <separator/>
+                <filter name="semi_annual" string="Semi-Annual"
+                        domain="[('count_type', '=', 'semi_annual')]"/>
+                <filter name="adhoc" string="Ad-Hoc"
+                        domain="[('count_type', '=', 'adhoc')]"/>
+                <separator/>
+                <filter name="has_variance" string="Has Variance"
+                        domain="[('has_variance', '=', True)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_elks_cash_on_hand" model="ir.actions.act_window">
+        <field name="name">Cash On Hand Counts</field>
+        <field name="res_model">elks.cash.on.hand</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_cash_on_hand_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record a cash on hand count
+            </p>
+            <p>
+                Count physical cash and checks held at the lodge.
+                The system compares your count against the expected
+                amount from undeposited daily batches.
+            </p>
+        </field>
+    </record>
+
+</odoo>

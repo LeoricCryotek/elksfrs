@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Elks Lodge Departments (Classes) per the Uniform Chart of Accounts -->
+
+        <!-- Balance Sheet departments (no P&L) -->
+        <record id="dept_balance_sheet" model="elks.department">
+            <field name="name">Balance Sheet</field>
+            <field name="code">10</field>
+            <field name="note">Assets, Liabilities, and Equity accounts. Not a P&amp;L department.</field>
+            <field name="cogs_target_pct">0</field>
+            <field name="labor_target_pct">0</field>
+        </record>
+
+        <!-- Operating departments -->
+        <record id="dept_lodge" model="elks.department">
+            <field name="name">Lodge Operations</field>
+            <field name="code">30</field>
+            <field name="note">Core lodge operations: dues, assessments, building expenses, insurance, utilities.</field>
+        </record>
+
+        <record id="dept_bar" model="elks.department">
+            <field name="name">Bar</field>
+            <field name="code">40</field>
+            <field name="note">Bar/lounge operations: liquor, beer, wine sales and costs.</field>
+        </record>
+
+        <record id="dept_food" model="elks.department">
+            <field name="name">Food Service</field>
+            <field name="code">50</field>
+            <field name="note">Food service operations: restaurant, kitchen, catering.</field>
+        </record>
+
+        <record id="dept_entertainment" model="elks.department">
+            <field name="name">Entertainment / Social</field>
+            <field name="code">60</field>
+            <field name="note">Entertainment and social activities.</field>
+        </record>
+
+        <record id="dept_fitness" model="elks.department">
+            <field name="name">Fitness Center / Swimming Pool</field>
+            <field name="code">61</field>
+        </record>
+
+        <record id="dept_golf" model="elks.department">
+            <field name="name">Golf Course</field>
+            <field name="code">62</field>
+        </record>
+
+        <record id="dept_bowling" model="elks.department">
+            <field name="name">Bowling</field>
+            <field name="code">63</field>
+        </record>
+
+        <record id="dept_rv" model="elks.department">
+            <field name="name">RV Park / Camping</field>
+            <field name="code">64</field>
+        </record>
+
+        <record id="dept_shooting" model="elks.department">
+            <field name="name">Shooting Range / Skeet</field>
+            <field name="code">65</field>
+        </record>
+
+        <record id="dept_rental" model="elks.department">
+            <field name="name">Rental Activities (16.030 Corp)</field>
+            <field name="code">66</field>
+            <field name="note">Rental activities through a separate 16.030 for-profit corporation.</field>
+        </record>
+
+        <record id="dept_other" model="elks.department">
+            <field name="name">Other Business Operations</field>
+            <field name="code">67</field>
+        </record>
+
+        <record id="dept_restricted" model="elks.department">
+            <field name="name">Restricted Funds</field>
+            <field name="code">90</field>
+            <field name="note">Temporary and Permanent Restricted Fund activities.</field>
+            <field name="cogs_target_pct">0</field>
+            <field name="labor_target_pct">0</field>
+        </record>
+    </data>
+</odoo>

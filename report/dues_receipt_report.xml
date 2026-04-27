@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dues Payment Receipt report -->
+    <record id="action_report_dues_receipt" model="ir.actions.report">
+        <field name="name">Dues Payment Receipt</field>
+        <field name="model">elks.dues.payment</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">elksfrs.report_dues_receipt</field>
+        <field name="report_file">elksfrs.report_dues_receipt</field>
+        <field name="binding_model_id" ref="model_elks_dues_payment"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Companion PDF report for download -->
+    <record id="action_report_dues_receipt_pdf" model="ir.actions.report">
+        <field name="name">Dues Payment Receipt (PDF)</field>
+        <field name="model">elks.dues.payment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.report_dues_receipt</field>
+        <field name="report_file">elksfrs.report_dues_receipt</field>
+        <field name="binding_model_id" ref="model_elks_dues_payment"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_dues_receipt">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="settings"
+                   t-value="doc.env['elks.lodge.settings'].sudo().search([], limit=1)"/>
+
+                <div class="page" style="font-size: 11px;">
+                    <!-- ===== LODGE HEADER WITH LOGOS ===== -->
+                    <table style="width: 100%; margin-bottom: 10px; border: none;">
+                        <tr>
+                            <td style="width: 15%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                                <t t-if="settings and settings.logo_primary">
+                                    <img t-att-src="image_data_uri(settings.logo_primary)"
+                                         style="max-height: 80px; max-width: 100px;" alt="Elks USA"/>
+                                </t>
+                            </td>
+                            <td style="text-align: center; vertical-align: middle; border: none; padding: 0 10px;">
+                                <h2 style="font-size: 22px; margin: 0 0 2px 0; color: #333;">
+                                    <t t-if="settings and settings.name"><span t-field="settings.name"/></t>
+                                    <t t-else="">Elks Lodge</t>
+                                    <t t-if="settings and settings.lodge_number">
+                                        #<span t-field="settings.lodge_number"/>
+                                    </t>
+                                </h2>
+                                <p style="color: #777; font-size: 11px; margin: 0;">
+                                    Benevolent and Protective Order of Elks
+                                </p>
+                                <h3 style="font-size: 18px; margin: 6px 0 0 0; color: #003366;">
+                                    Dues Payment Receipt
+                                </h3>
+                            </td>
+                            <td style="width: 15%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                                <t t-if="settings and settings.logo_lodge">
+                                    <img t-att-src="image_data_uri(settings.logo_lodge)"
+                                         style="max-height: 80px; max-width: 100px;" alt="Lodge Logo"/>
+                                </t>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="border-top: 2px solid #003366; margin-bottom: 15px;"/>
+                        <div class="row mt-4">
+                            <div class="col-6">
+                                <strong>Member:</strong>
+                                <span t-field="doc.partner_id.name"/><br/>
+                                <strong>Member #:</strong>
+                                <span t-field="doc.member_number"/><br/>
+                                <strong>Dues Paid-To:</strong>
+                                <span t-if="doc.dues_paid_to_after"
+                                      t-field="doc.dues_paid_to_after"
+                                      t-options='{"widget": "date"}'/>
+                                <t t-if="not doc.dues_paid_to_after">N/A</t>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Receipt #:</strong>
+                                <span t-field="doc.name"/><br/>
+                                <strong>Date:</strong>
+                                <span t-field="doc.payment_date"
+                                      t-options='{"widget": "date"}'/><br/>
+                                <strong>Check #:</strong>
+                                <span t-if="doc.check_number"
+                                      t-field="doc.check_number"/>
+                                <t t-if="not doc.check_number">—</t><br/>
+                                <strong>Lodge Year:</strong>
+                                <span t-field="doc.lodge_year"/>
+                            </div>
+                        </div>
+
+                        <table class="table table-sm mt-4">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th class="text-end">Default</th>
+                                    <th class="text-end">Amount Paid</th>
+                                    <th class="text-center">Lodge Assisted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.line_ids" t-as="line">
+                                    <td><span t-field="line.description"/></td>
+                                    <td class="text-end">
+                                        <span t-field="line.default_amount"
+                                              t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.amount_paid"
+                                              t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                    </td>
+                                    <td class="text-center">
+                                        <span t-if="line.lodge_assisted">✓</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="2" class="text-end">Total Paid:</th>
+                                    <th class="text-end">
+                                        <span t-field="doc.amount_total"
+                                              t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                    </th>
+                                    <th/>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <strong>Status:</strong>
+                                <span t-field="doc.state"/><br/>
+                                <strong>Payment Type:</strong>
+                                <span t-field="doc.payment_type"/>
+                            </div>
+                        </div>
+
+                        <div t-if="doc.note" class="mt-4">
+                            <strong>Notes:</strong>
+                            <p t-field="doc.note"/>
+                        </div>
+
+                        <!-- Signature line -->
+                        <div class="row mt-5">
+                            <div class="col-6">
+                                <div style="border-top: 1px solid #333; padding-top: 4px;">
+                                    Member Signature
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div style="border-top: 1px solid #333; padding-top: 4px;">
+                                    Lodge Officer Signature
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 text-center text-muted small">
+                            Thank you for your payment.
+                            <br/>
+                            Retain this receipt for your records.
+                        </div>
+                    </div>
+            </t>
+        </t>
+    </template>
+</odoo>

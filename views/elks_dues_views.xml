@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== Dues Rate Tree ===== -->
+    <record id="view_elks_dues_rate_tree" model="ir.ui.view">
+        <field name="name">elks.dues.rate.tree</field>
+        <field name="model">elks.dues.rate</field>
+        <field name="arch" type="xml">
+            <list string="Lodge Rates" editable="bottom">
+                <field name="tran_code_id"/>
+                <field name="tran_type"/>
+                <field name="rate_code" optional="show"/>
+                <field name="name"/>
+                <field name="amount"/>
+                <field name="credit_account_code"/>
+                <field name="credit_account_id" optional="show"/>
+                <field name="debit_account_code"/>
+                <field name="debit_account_id" optional="show"/>
+                <field name="is_dues"/>
+                <field name="months_covered"/>
+                <field name="applies_to"/>
+                <field name="include_in_one_year" optional="show"/>
+                <field name="include_in_six_months" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_dues_rate_form" model="ir.ui.view">
+        <field name="name">elks.dues.rate.form</field>
+        <field name="model">elks.dues.rate</field>
+        <field name="arch" type="xml">
+            <form string="Lodge Rate">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Rate Info">
+                            <field name="tran_code_id"/>
+                            <field name="tran_type"/>
+                            <field name="rate_code"/>
+                            <field name="amount"/>
+                            <field name="applies_to"/>
+                        </group>
+                        <group string="Dues Settings">
+                            <field name="is_dues"/>
+                            <field name="months_covered"/>
+                            <field name="include_in_one_year"/>
+                            <field name="include_in_six_months"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="GL Account Mapping">
+                        <group>
+                            <field name="credit_account_code"/>
+                            <field name="credit_account_id"/>
+                        </group>
+                        <group>
+                            <field name="debit_account_code"/>
+                            <field name="debit_account_id"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="Notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Dues Rate Search ===== -->
+    <record id="view_elks_dues_rate_search" model="ir.ui.view">
+        <field name="name">elks.dues.rate.search</field>
+        <field name="model">elks.dues.rate</field>
+        <field name="arch" type="xml">
+            <search string="Search Rates">
+                <field name="name"/>
+                <field name="tran_code_id"/>
+                <field name="credit_account_id"/>
+                <filter name="is_dues" string="Dues Only" domain="[('is_dues', '=', True)]"/>
+                <filter name="active" string="Active" domain="[('active', '=', True)]"/>
+                <separator/>
+                <filter name="inactive" string="Archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_tran_type" string="Transaction Type" context="{'group_by': 'tran_type'}"/>
+                    <filter name="group_applies_to" string="Applies To" context="{'group_by': 'applies_to'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===== Dues Payment Tree ===== -->
+    <record id="view_elks_dues_payment_tree" model="ir.ui.view">
+        <field name="name">elks.dues.payment.tree</field>
+        <field name="model">elks.dues.payment</field>
+        <field name="arch" type="xml">
+            <list string="Dues Payments"
+                  decoration-info="state == 'draft'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="payment_date"/>
+                <field name="partner_id"/>
+                <field name="member_number"/>
+                <field name="payment_type"/>
+                <field name="amount_total" sum="Total"/>
+                <field name="check_number" optional="show"/>
+                <field name="deposit_id" optional="show"/>
+                <field name="clms_status" widget="badge"
+                       decoration-warning="clms_status == 'pending'"
+                       decoration-success="clms_status == 'processed'"
+                       decoration-muted="clms_status == 'na'"
+                       optional="show"/>
+                <field name="lodge_year"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'posted'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== Dues Payment Form ===== -->
+    <record id="view_elks_dues_payment_form" model="ir.ui.view">
+        <field name="name">elks.dues.payment.form</field>
+        <field name="model">elks.dues.payment</field>
+        <field name="arch" type="xml">
+            <form string="Dues Payment">
+                <header>
+                    <button name="action_post" type="object" string="Post Payment"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft"
+                            invisible="state not in ('posted', 'cancelled')"/>
+                    <button name="action_mark_clms_processed" type="object"
+                            string="Mark as Processed in CLMS"
+                            class="btn-secondary"
+                            invisible="state != 'posted' or clms_status == 'processed'"/>
+                    <button name="action_mark_clms_pending" type="object"
+                            string="Unmark CLMS Processed"
+                            class="btn-link"
+                            invisible="clms_status != 'processed'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,posted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Member &amp; Payment">
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="member_number"/>
+                            <field name="dues_paid_to"/>
+                            <field name="payment_type" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Details">
+                            <field name="payment_date" readonly="state != 'draft'"/>
+                            <field name="check_number" readonly="state != 'draft'"/>
+                            <field name="deposit_id"
+                                   options="{'no_create_edit': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="lodge_year"/>
+                            <field name="amount_total"/>
+                            <field name="journal_entry_id" readonly="True"/>
+                            <field name="application_id" readonly="True"
+                                   invisible="not application_id"/>
+                        </group>
+                        <group string="CLMS Processing">
+                            <field name="clms_status" widget="badge"
+                                   decoration-warning="clms_status == 'pending'"
+                                   decoration-success="clms_status == 'processed'"
+                                   decoration-muted="clms_status == 'na'"/>
+                            <field name="clms_processed_date" readonly="1"/>
+                            <field name="clms_processed_by" readonly="1"/>
+                            <field name="dues_paid_to_before" readonly="1"/>
+                            <field name="dues_paid_to_after" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="rate_id"/>
+                            <field name="description"/>
+                            <field name="default_amount" readonly="True"/>
+                            <field name="amount_paid"/>
+                            <field name="lodge_assisted"/>
+                        </list>
+                    </field>
+                    <group class="oe_subtotal_footer oe_right">
+                        <field name="amount_total" class="oe_subtotal_footer_separator"/>
+                    </group>
+                    <field name="note" placeholder="Payment notes..."
+                           readonly="state != 'draft'"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Dues Payment Search ===== -->
+    <record id="view_elks_dues_payment_search" model="ir.ui.view">
+        <field name="name">elks.dues.payment.search</field>
+        <field name="model">elks.dues.payment</field>
+        <field name="arch" type="xml">
+            <search string="Search Payments">
+                <field name="partner_id"/>
+                <field name="member_number"/>
+                <field name="payment_type"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="posted" string="Posted" domain="[('state', '=', 'posted')]"/>
+                <group>
+                    <filter name="group_member" string="Member" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_type" string="Payment Type" context="{'group_by': 'payment_type'}"/>
+                    <filter name="group_lodge_year" string="Lodge Year" context="{'group_by': 'lodge_year'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'payment_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===== Actions ===== -->
+    <record id="action_elks_dues_rate" model="ir.actions.act_window">
+        <field name="name">Lodge Rates</field>
+        <field name="res_model">elks.dues.rate</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_elks_dues_payment" model="ir.actions.act_window">
+        <field name="name">Dues Payments</field>
+        <field name="res_model">elks.dues.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_dues_payment_search"/>
+    </record>
+
+    <!-- Dues Adjustments — opens lodge rates so users can adjust
+         amounts and GL account mappings for each dues/fee type -->
+    <record id="action_elks_dues_adjustment" model="ir.actions.act_window">
+        <field name="name">Dues Adjustments</field>
+        <field name="res_model">elks.dues.rate</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_dues_rate_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure dues rates and fee amounts
+            </p>
+            <p>
+                Adjust the amount, GL credit/debit accounts, and bundle
+                settings for each dues rate and fee code.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Pay Dues button on the CLMS tab (defined here so the method is available) -->
+    <record id="view_partner_form_elks_pay_dues" model="ir.ui.view">
+        <field name="name">res.partner.form.elks.pay.dues</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="elkscontacts.view_partner_form_elks"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='clms_tab']/group[1]" position="before">
+                <div class="mb-3">
+                    <button name="action_pay_dues"
+                            string="Pay Dues"
+                            type="object"
+                            class="btn-primary"
+                            icon="fa-money"
+                            invisible="not x_is_member"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add Dues Payment History to the Elks History tab on res.partner -->
+    <record id="view_partner_form_elks_frs_history" model="ir.ui.view">
+        <field name="name">res.partner.form.elks.frs.history</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='elks_history']" position="inside">
+                <separator string="Dues Payment History"/>
+                <field name="x_dues_payment_ids" readonly="1">
+                    <list>
+                        <field name="name" string="Reference"/>
+                        <field name="payment_date"/>
+                        <field name="payment_type"/>
+                        <field name="amount_total" sum="Total"/>
+                        <field name="check_number"/>
+                        <field name="lodge_year"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the CLMS import wizard to show dues auto-creation options -->
+    <record id="view_clms_import_wizard_form_dues" model="ir.ui.view">
+        <field name="name">clms.import.wizard.form.dues</field>
+        <field name="model">clms.import.wizard</field>
+        <field name="inherit_id" ref="elkscontacts.view_clms_import_wizard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='overwrite']" position="after">
+                <separator string="Dues Income Tracking"/>
+                <field name="auto_create_dues"/>
+                <field name="dues_payment_date"
+                       invisible="not auto_create_dues"/>
+                <field name="backfill_existing"
+                       invisible="not auto_create_dues"/>
+                <div class="alert alert-info small" role="alert"
+                     invisible="not backfill_existing">
+                    <i class="fa fa-info-circle"/>
+                    Backfill will create dues income records for all paid
+                    members who don't already have a dues payment on file.
+                    Use this once after your first CLMS import to catch up.
+                </div>
+                <div class="alert alert-warning" role="alert"
+                     invisible="not auto_create_dues">
+                    <strong>Dues Income Records</strong><br/>
+                    When enabled, the import will compare each member's
+                    dues-paid-to date before and after the import. If the
+                    date advanced, a dues payment and journal entry will
+                    be created automatically with the correct GL coding
+                    (regular, life at 50%%, or associate rates).
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

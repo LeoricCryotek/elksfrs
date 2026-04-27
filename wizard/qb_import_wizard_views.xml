@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== QuickBooks Import Wizard ===== -->
+    <record id="view_qb_import_wizard_form" model="ir.ui.view">
+        <field name="name">qb.import.wizard.form</field>
+        <field name="model">qb.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="QuickBooks Import">
+                <group invisible="state != 'setup'">
+                    <field name="import_type" widget="radio"/>
+                    <field name="file_data" filename="file_name"/>
+                    <field name="file_name" invisible="True"/>
+                    <field name="date_override"/>
+                    <field name="auto_post"/>
+                    <field name="create_missing_accounts"/>
+                </group>
+                <group invisible="state != 'done'">
+                    <div class="alert alert-success" role="alert">
+                        <strong>Import complete!</strong>
+                    </div>
+                    <field name="result_message" readonly="True" widget="text"/>
+                </group>
+                <field name="state" invisible="True"/>
+                <footer invisible="state != 'setup'">
+                    <button name="action_import" type="object"
+                            string="Import" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+                <footer invisible="state != 'done'">
+                    <button string="Close" class="btn-primary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_qb_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import from QuickBooks</field>
+        <field name="res_model">qb.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- ===== Clover Import Wizard ===== -->
+    <record id="view_clover_import_wizard_form" model="ir.ui.view">
+        <field name="name">clover.import.wizard.form</field>
+        <field name="model">clover.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Clover POS Import">
+                <group invisible="state != 'setup'">
+                    <field name="file_data" filename="file_name"/>
+                    <field name="file_name" invisible="True"/>
+                    <field name="department_id"/>
+                    <field name="default_income_account_id"/>
+                    <field name="default_cash_account_id"/>
+                    <field name="date_override"/>
+                    <field name="auto_post"/>
+                </group>
+                <group invisible="state != 'done'">
+                    <div class="alert alert-success" role="alert">
+                        <strong>Clover import complete!</strong>
+                    </div>
+                    <field name="result_message" readonly="True" widget="text"/>
+                </group>
+                <field name="state" invisible="True"/>
+                <footer invisible="state != 'setup'">
+                    <button name="action_import" type="object"
+                            string="Import" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+                <footer invisible="state != 'done'">
+                    <button string="Close" class="btn-primary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_clover_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import from Clover POS</field>
+        <field name="res_model">clover.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

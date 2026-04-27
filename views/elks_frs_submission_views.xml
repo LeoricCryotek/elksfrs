@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== FRS Submission Tree View ===== -->
+    <record id="view_elks_frs_submission_tree" model="ir.ui.view">
+        <field name="name">elks.frs.submission.tree</field>
+        <field name="model">elks.frs.submission</field>
+        <field name="arch" type="xml">
+            <list string="FRS Submissions"
+                  decoration-danger="is_overdue"
+                  decoration-success="state == 'accepted'"
+                  decoration-info="state == 'draft'">
+                <field name="name"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="lodge_year"/>
+                <field name="due_date"/>
+                <field name="is_overdue" column_invisible="True"/>
+                <field name="submission_date"/>
+                <field name="line_count" string="Lines"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'generated'"
+                       decoration-success="state in ('submitted', 'accepted')"
+                       decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== FRS Submission Form View ===== -->
+    <record id="view_elks_frs_submission_form" model="ir.ui.view">
+        <field name="name">elks.frs.submission.form</field>
+        <field name="model">elks.frs.submission</field>
+        <field name="arch" type="xml">
+            <form string="FRS Submission">
+                <header>
+                    <button name="action_generate_csv" type="object"
+                            string="Generate CSV" class="btn-primary"
+                            invisible="state not in ('draft', 'rejected')"/>
+                    <button name="action_mark_submitted" type="object"
+                            string="Mark as Submitted"
+                            invisible="state != 'generated'"/>
+                    <button name="action_mark_accepted" type="object"
+                            string="Mark Accepted"
+                            invisible="state != 'submitted'"/>
+                    <button name="action_mark_rejected" type="object"
+                            string="Mark Rejected"
+                            invisible="state != 'submitted'"/>
+                    <button name="action_reset_draft" type="object"
+                            string="Reset to Draft"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,generated,submitted,accepted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <div invisible="not is_overdue"
+                         class="alert alert-danger" role="alert">
+                        <strong>This submission is overdue!</strong>
+                        FRS fines apply at $100/month, up to $500 maximum.
+                    </div>
+                    <group>
+                        <group string="Period">
+                            <field name="period_start"/>
+                            <field name="period_end"/>
+                            <field name="lodge_year"/>
+                        </group>
+                        <group string="Submission">
+                            <field name="due_date"/>
+                            <field name="is_overdue" invisible="True"/>
+                            <field name="submission_date"/>
+                            <field name="line_count"/>
+                            <field name="total_amount"/>
+                        </group>
+                    </group>
+                    <group string="CSV Export" invisible="not csv_file">
+                        <field name="csv_file" filename="csv_filename"/>
+                        <field name="csv_filename" invisible="True"/>
+                    </group>
+                    <field name="notes" placeholder="Notes about this submission..."/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Action ===== -->
+    <record id="action_elks_frs_submission" model="ir.actions.act_window">
+        <field name="name">FRS Submissions</field>
+        <field name="res_model">elks.frs.submission</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Landscape paper format (must be defined before the report that references it) -->
+    <record id="paperformat_budget_landscape" model="report.paperformat">
+        <field name="name">Budget Report (Landscape)</field>
+        <field name="format">Letter</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">25</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">15</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <!-- Report action — accessible from gear icon Print menu and header button -->
+    <record id="action_report_budget" model="ir.actions.report">
+        <field name="name">Budget Report</field>
+        <field name="model">elks.budget</field>
+        <field name="report_type">qweb-html</field>
+        <field name="report_name">elksfrs.report_budget</field>
+        <field name="report_file">elksfrs.report_budget</field>
+        <field name="binding_model_id" ref="model_elks_budget"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_budget_landscape"/>
+    </record>
+
+    <!-- Companion PDF report for download -->
+    <record id="action_report_budget_pdf" model="ir.actions.report">
+        <field name="name">Budget Report (PDF)</field>
+        <field name="model">elks.budget</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.report_budget</field>
+        <field name="report_file">elksfrs.report_budget</field>
+        <field name="binding_model_id" ref="model_elks_budget"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_budget_landscape"/>
+    </record>
+
+    <!-- QWeb template -->
+    <template id="report_budget">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="settings"
+                   t-value="doc.env['elks.lodge.settings'].sudo().search([], limit=1)"/>
+                <div class="page" style="font-size: 11px;">
+
+                        <!-- ===== STYLES ===== -->
+                        <style>
+                            .budget-header-bar {
+                                background: #2E4057; color: #FFFFFF;
+                                padding: 8px 14px; font-size: 18px; font-weight: bold;
+                                margin-bottom: 0; border-radius: 4px 4px 0 0;
+                            }
+                            .budget-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+                            .budget-table th {
+                                background: #E8EEF2; color: #2E4057;
+                                padding: 6px 8px; font-size: 13px; font-weight: bold;
+                                border: 1px solid #CCC; text-align: right;
+                            }
+                            .budget-table th:first-child, .budget-table th:nth-child(2) { text-align: left; }
+                            .budget-table td {
+                                padding: 5px 8px; font-size: 13px;
+                                border: 1px solid #DDD; color: #222;
+                            }
+                            .budget-table td.text-end { text-align: right; }
+                            .budget-table tr.over-budget { background: #FDECEA; }
+                            .budget-table tfoot td {
+                                background: #E8EEF2; font-weight: bold; font-size: 14px;
+                                border-top: 2px solid #2E4057;
+                            }
+                            .text-green { color: #1B8C3A; }
+                            .text-red { color: #D32F2F; }
+                            .progress-cell { width: 120px; }
+                            .progress-bar-bg {
+                                background: #E0E0E0; border-radius: 4px;
+                                height: 16px; width: 100%; position: relative;
+                                overflow: hidden;
+                            }
+                            .progress-bar-fill {
+                                height: 100%; border-radius: 4px 0 0 4px;
+                                min-width: 0;
+                            }
+                            .progress-bar-fill.green { background: #4CAF50; }
+                            .progress-bar-fill.amber { background: #FF9800; }
+                            .progress-bar-fill.red { background: #F44336; }
+                            .progress-label {
+                                position: absolute; top: 0; left: 0; right: 0;
+                                text-align: center; font-size: 10px; font-weight: bold;
+                                line-height: 16px; color: #333;
+                            }
+                            /* Summary table */
+                            .summary-table { width: 70%; margin: 0 auto 20px; border-collapse: collapse; }
+                            .summary-table th {
+                                background: #2E4057; color: #FFF;
+                                padding: 10px 14px; font-size: 18px; text-align: right;
+                            }
+                            .summary-table th:first-child { text-align: left; }
+                            .summary-table td {
+                                padding: 10px 14px; font-size: 18px;
+                                border: 1px solid #CCC; text-align: right;
+                            }
+                            .summary-table td:first-child { text-align: left; font-weight: bold; }
+                            .summary-table tr.net-row {
+                                background: #E8EEF2; font-weight: bold; font-size: 20px;
+                            }
+                            .summary-table tr.net-row td { font-size: 20px; font-weight: bold; }
+                            /* Chart bars */
+                            .chart-container { margin: 12px auto 20px; width: 80%; }
+                            .chart-row { display: flex; align-items: center; margin-bottom: 6px; }
+                            .chart-label { width: 140px; font-size: 13px; font-weight: bold; text-align: right; padding-right: 10px; }
+                            .chart-bar-area { flex: 1; position: relative; height: 22px; }
+                            .chart-bar {
+                                height: 22px; border-radius: 3px;
+                                display: inline-block; position: absolute; top: 0;
+                            }
+                            .chart-bar.budget { background: #B0BEC5; opacity: 0.5; }
+                            .chart-bar.actual-green { background: #4CAF50; }
+                            .chart-bar.actual-red { background: #F44336; }
+                            .chart-val { position: absolute; right: -5px; top: 0; font-size: 11px; line-height: 22px; transform: translateX(100%); white-space: nowrap; }
+                        </style>
+
+                        <!-- ===== LODGE HEADER WITH LOGOS ===== -->
+                        <table style="width: 100%; margin-bottom: 10px; border: none;">
+                            <tr>
+                                <td style="width: 15%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                                    <t t-if="settings and settings.logo_primary">
+                                        <img t-att-src="image_data_uri(settings.logo_primary)"
+                                             style="max-height: 80px; max-width: 100px;" alt="Elks USA"/>
+                                    </t>
+                                </td>
+                                <td style="text-align: center; vertical-align: middle; border: none; padding: 0 10px;">
+                                    <h2 style="font-size: 22px; margin: 0 0 2px 0; color: #333;">
+                                        <t t-if="settings and settings.name"><span t-field="settings.name"/></t>
+                                        <t t-else="">Elks Lodge</t>
+                                        <t t-if="settings and settings.lodge_number">
+                                            #<span t-field="settings.lodge_number"/>
+                                        </t>
+                                    </h2>
+                                    <p style="color: #777; font-size: 11px; margin: 0;">
+                                        Benevolent and Protective Order of Elks
+                                    </p>
+                                    <h3 style="font-size: 18px; margin: 6px 0 0 0; color: #003366;">
+                                        Budget Report
+                                    </h3>
+                                </td>
+                                <td style="width: 15%; text-align: center; vertical-align: middle; border: none; padding: 0;">
+                                    <t t-if="settings and settings.logo_lodge">
+                                        <img t-att-src="image_data_uri(settings.logo_lodge)"
+                                             style="max-height: 80px; max-width: 100px;" alt="Lodge Logo"/>
+                                    </t>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="border-top: 2px solid #003366; margin-bottom: 15px;"/>
+                        <div class="text-center" style="font-size: 15px; color: #555; margin-bottom: 12px;">
+                            <span t-field="doc.name"/>
+                            <t t-if="doc.lodge_year">
+                                &#8212; Lodge Year <span t-field="doc.lodge_year"/>
+                            </t>
+                            <t t-if="doc.fiscal_year_end">
+                                &#8212; FYE: <span t-field="doc.fiscal_year_end"
+                                             t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/>
+                            </t>
+                        </div>
+
+                        <!-- ===== SUMMARY TABLE (large font, colored) ===== -->
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left;"/>
+                                    <th>Budget</th>
+                                    <th>Actual</th>
+                                    <th>Variance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Total Income</td>
+                                    <td>
+                                        <span t-esc="'$ {:,.2f}'.format(doc.total_income or 0)"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="'$ {:,.2f}'.format(doc.actual_income or 0)"/>
+                                    </td>
+                                    <td t-attf-class="#{doc.income_variance &gt;= 0 and 'text-green' or 'text-red'}">
+                                        <span t-esc="'$ {:,.2f}'.format(doc.income_variance or 0)"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Total Expenses</td>
+                                    <td>
+                                        <span t-esc="'$ {:,.2f}'.format(doc.total_expense or 0)"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="'$ {:,.2f}'.format(doc.actual_expense or 0)"/>
+                                    </td>
+                                    <td t-attf-class="#{doc.expense_variance &gt;= 0 and 'text-green' or 'text-red'}">
+                                        <span t-esc="'$ {:,.2f}'.format(doc.expense_variance or 0)"/>
+                                    </td>
+                                </tr>
+                                <tr class="net-row">
+                                    <td>NET</td>
+                                    <td t-attf-class="#{doc.net_budget &gt;= 0 and 'text-green' or 'text-red'}">
+                                        <span t-esc="'$ {:,.2f}'.format(doc.net_budget or 0)"/>
+                                    </td>
+                                    <td t-attf-class="#{doc.actual_net &gt;= 0 and 'text-green' or 'text-red'}">
+                                        <span t-esc="'$ {:,.2f}'.format(doc.actual_net or 0)"/>
+                                    </td>
+                                    <td/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- ===== VISUAL BAR CHART: Budget vs Actual ===== -->
+                        <t t-set="chart_max" t-value="max(doc.total_income or 1, doc.total_expense or 1, doc.actual_income or 1, doc.actual_expense or 1, 1)"/>
+                        <div class="chart-container">
+                            <!-- Income bars -->
+                            <div class="chart-row">
+                                <div class="chart-label">Income Budget</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar budget"
+                                         t-attf-style="width: #{round(min(((doc.total_income or 0) / chart_max) * 100, 100), 1)}%;"/>
+                                    <span class="chart-val" t-attf-style="left: #{round(min(((doc.total_income or 0) / chart_max) * 100, 100), 1)}%;">
+                                        <span t-esc="'${:,.0f}'.format(doc.total_income or 0)"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-label">Income Actual</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar actual-green"
+                                         t-attf-style="width: #{round(min(((doc.actual_income or 0) / chart_max) * 100, 100), 1)}%;"/>
+                                    <span class="chart-val" t-attf-style="left: #{round(min(((doc.actual_income or 0) / chart_max) * 100, 100), 1)}%;">
+                                        <span t-esc="'${:,.0f}'.format(doc.actual_income or 0)"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- Spacer -->
+                            <div style="height: 8px;"/>
+                            <!-- Expense bars -->
+                            <div class="chart-row">
+                                <div class="chart-label">Expense Budget</div>
+                                <div class="chart-bar-area">
+                                    <div class="chart-bar budget"
+                                         t-attf-style="width: #{round(min(((doc.total_expense or 0) / chart_max) * 100, 100), 1)}%;"/>
+                                    <span class="chart-val" t-attf-style="left: #{round(min(((doc.total_expense or 0) / chart_max) * 100, 100), 1)}%;">
+                                        <span t-esc="'${:,.0f}'.format(doc.total_expense or 0)"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="chart-row">
+                                <div class="chart-label">Expense Actual</div>
+                                <div class="chart-bar-area">
+                                    <t t-set="exp_color" t-value="(doc.actual_expense or 0) > (doc.total_expense or 0) and 'actual-red' or 'actual-green'"/>
+                                    <div t-attf-class="chart-bar #{exp_color}"
+                                         t-attf-style="width: #{round(min(((doc.actual_expense or 0) / chart_max) * 100, 100), 1)}%;"/>
+                                    <span class="chart-val" t-attf-style="left: #{round(min(((doc.actual_expense or 0) / chart_max) * 100, 100), 1)}%;">
+                                        <span t-esc="'${:,.0f}'.format(doc.actual_expense or 0)"/>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ===== INCOME SECTION ===== -->
+                        <t t-set="income_lines"
+                           t-value="doc.line_ids.filtered(lambda l: l.account_type == 'income').sorted(key=lambda l: l.account_code or '')"/>
+                        <t t-if="income_lines">
+                            <div class="budget-header-bar">INCOME PROJECTIONS</div>
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%; text-align: left;">Account</th>
+                                        <th style="width: 28%; text-align: left;">Description</th>
+                                        <th style="width: 14%;">Projected</th>
+                                        <th style="width: 14%;">Actual</th>
+                                        <th style="width: 14%;">Variance</th>
+                                        <th style="width: 20%;">% Received</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="inc_budget_total" t-value="0"/>
+                                    <t t-set="inc_actual_total" t-value="0"/>
+                                    <t t-set="inc_variance_total" t-value="0"/>
+                                    <t t-foreach="income_lines" t-as="line">
+                                        <t t-set="inc_budget_total" t-value="inc_budget_total + (line.amount or 0)"/>
+                                        <t t-set="inc_actual_total" t-value="inc_actual_total + (line.actual_amount or 0)"/>
+                                        <t t-set="inc_variance_total" t-value="inc_variance_total + (line.variance or 0)"/>
+                                        <t t-set="pct_raw" t-value="(line.actual_amount or 0) / (line.amount or 1) * 100 if (line.amount or 0) != 0 else 0"/>
+                                        <t t-set="pct_capped" t-value="min(pct_raw, 100)"/>
+                                        <t t-set="bar_color" t-value="pct_raw &gt;= 90 and 'green' or (pct_raw &gt;= 50 and 'amber' or 'red')"/>
+                                        <tr>
+                                            <td>
+                                                <span t-field="line.account_code"/>
+                                                <t t-if="line.account_id.subaccount">
+                                                    <span t-field="line.account_id.subaccount"/>
+                                                </t>
+                                            </td>
+                                            <td><span t-field="line.account_id.name"/></td>
+                                            <td class="text-end">
+                                                <span t-esc="'${:,.0f}'.format(line.amount or 0)"/>
+                                            </td>
+                                            <td class="text-end">
+                                                <span t-esc="'${:,.0f}'.format(line.actual_amount or 0)"/>
+                                            </td>
+                                            <td class="text-end"
+                                                t-attf-style="color: #{line.variance &gt;= 0 and '#1B8C3A' or '#D32F2F'};">
+                                                <span t-esc="'${:,.0f}'.format(line.variance or 0)"/>
+                                            </td>
+                                            <td class="progress-cell">
+                                                <div class="progress-bar-bg">
+                                                    <div t-attf-class="progress-bar-fill #{bar_color}"
+                                                         t-attf-style="width: #{int(round(pct_capped))}%;"/>
+                                                    <div class="progress-label">
+                                                        <span t-esc="'{:.0f}%'.format(pct_raw)"/>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2">TOTAL INCOME</td>
+                                        <td class="text-end">
+                                            <span t-esc="'${:,.0f}'.format(inc_budget_total)"/>
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="'${:,.0f}'.format(inc_actual_total)"/>
+                                        </td>
+                                        <td class="text-end"
+                                            t-attf-style="color: #{inc_variance_total &gt;= 0 and '#1B8C3A' or '#D32F2F'};">
+                                            <span t-esc="'${:,.0f}'.format(inc_variance_total)"/>
+                                        </td>
+                                        <td/>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </t>
+
+                        <!-- ===== EXPENSE SECTION ===== -->
+                        <t t-set="expense_lines"
+                           t-value="doc.line_ids.filtered(lambda l: l.account_type in ('expense', 'cogs')).sorted(key=lambda l: l.account_code or '')"/>
+                        <t t-if="expense_lines">
+                            <div class="budget-header-bar">EXPENSES</div>
+                            <table class="budget-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%; text-align: left;">Account</th>
+                                        <th style="width: 28%; text-align: left;">Description</th>
+                                        <th style="width: 14%;">Budgeted</th>
+                                        <th style="width: 14%;">Actual</th>
+                                        <th style="width: 14%;">Variance</th>
+                                        <th style="width: 20%;">% Used</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="exp_budget_total" t-value="0"/>
+                                    <t t-set="exp_actual_total" t-value="0"/>
+                                    <t t-set="exp_variance_total" t-value="0"/>
+                                    <t t-foreach="expense_lines" t-as="line">
+                                        <t t-set="exp_budget_total" t-value="exp_budget_total + (line.amount or 0)"/>
+                                        <t t-set="exp_actual_total" t-value="exp_actual_total + (line.actual_amount or 0)"/>
+                                        <t t-set="exp_variance_total" t-value="exp_variance_total + (line.variance or 0)"/>
+                                        <t t-set="pct_raw" t-value="(line.actual_amount or 0) / (line.amount or 1) * 100 if (line.amount or 0) != 0 else 0"/>
+                                        <t t-set="pct_capped" t-value="min(pct_raw, 100)"/>
+                                        <t t-set="bar_color" t-value="pct_raw &gt; 100 and 'red' or (pct_raw &gt;= 75 and 'amber' or 'green')"/>
+                                        <tr t-attf-class="#{line.is_over_budget and 'over-budget' or ''}">
+                                            <td>
+                                                <span t-field="line.account_code"/>
+                                                <t t-if="line.account_id.subaccount">
+                                                    <span t-field="line.account_id.subaccount"/>
+                                                </t>
+                                            </td>
+                                            <td><span t-field="line.account_id.name"/></td>
+                                            <td class="text-end">
+                                                <span t-esc="'${:,.0f}'.format(line.amount or 0)"/>
+                                            </td>
+                                            <td class="text-end">
+                                                <span t-esc="'${:,.0f}'.format(line.actual_amount or 0)"/>
+                                            </td>
+                                            <td class="text-end"
+                                                t-attf-style="color: #{line.variance &gt;= 0 and '#1B8C3A' or '#D32F2F'};">
+                                                <span t-esc="'${:,.0f}'.format(line.variance or 0)"/>
+                                            </td>
+                                            <td class="progress-cell">
+                                                <div class="progress-bar-bg">
+                                                    <div t-attf-class="progress-bar-fill #{bar_color}"
+                                                         t-attf-style="width: #{int(round(pct_capped))}%;"/>
+                                                    <div class="progress-label">
+                                                        <span t-esc="'{:.0f}%'.format(pct_raw)"/>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2">TOTAL EXPENSES</td>
+                                        <td class="text-end">
+                                            <span t-esc="'${:,.0f}'.format(exp_budget_total)"/>
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-esc="'${:,.0f}'.format(exp_actual_total)"/>
+                                        </td>
+                                        <td class="text-end"
+                                            t-attf-style="color: #{exp_variance_total &gt;= 0 and '#1B8C3A' or '#D32F2F'};">
+                                            <span t-esc="'${:,.0f}'.format(exp_variance_total)"/>
+                                        </td>
+                                        <td/>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </t>
+
+                        <!-- Footer note -->
+                        <p class="text-center" style="font-size: 11px; color: #999; margin-top: 10px;">
+                            Generated from Odoo &#8212; Elks FRS Module
+                        </p>
+
+                    </div>
+            </t>
+        </t>
+    </template>
+</odoo>

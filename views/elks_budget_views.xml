@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== Budget Tree View ===== -->
+    <record id="view_elks_budget_tree" model="ir.ui.view">
+        <field name="name">elks.budget.tree</field>
+        <field name="model">elks.budget</field>
+        <field name="arch" type="xml">
+            <list string="Budgets">
+                <field name="name"/>
+                <field name="lodge_year"/>
+                <field name="fiscal_year_end"/>
+                <field name="total_income"/>
+                <field name="total_expense"/>
+                <field name="net_budget"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state in ('board_pending', 'floor_pending')"
+                       decoration-success="state in ('board_approved', 'floor_approved', 'submitted')"
+                       decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== Budget Form View ===== -->
+    <record id="view_elks_budget_form" model="ir.ui.view">
+        <field name="name">elks.budget.form</field>
+        <field name="model">elks.budget</field>
+        <field name="arch" type="xml">
+            <form string="Budget">
+                <header>
+                    <button name="%(action_budget_import_wizard)d" type="action"
+                            string="Import Lines"
+                            class="btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button name="%(action_qb_import_wizard)d" type="action"
+                            string="Import QB Actuals"
+                            class="btn-secondary"
+                            invisible="state == 'draft'"/>
+                    <button name="%(action_qb_pnl_reconcile_wizard)d" type="action"
+                            string="QB P&amp;L Reconcile"
+                            class="btn-secondary"
+                            invisible="state == 'draft'"/>
+                    <!-- Submit to Board -->
+                    <button name="action_submit_board" type="object"
+                            string="Submit to Board" class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="This will lock the budget and submit it to the Board for review. Continue?"/>
+                    <!-- Board Approve / Reject -->
+                    <button name="action_board_approve" type="object"
+                            string="Board Approve" class="btn-primary"
+                            invisible="state != 'board_pending'"/>
+                    <button name="action_board_reject" type="object"
+                            string="Board Reject" class="btn-danger"
+                            invisible="state != 'board_pending'"/>
+                    <!-- Submit to Floor -->
+                    <button name="action_submit_floor" type="object"
+                            string="Submit to Floor" class="btn-primary"
+                            invisible="state != 'board_approved'"
+                            confirm="Submit this budget to the membership for a floor vote?"/>
+                    <!-- Floor Approve / Reject -->
+                    <button name="action_floor_approve" type="object"
+                            string="Floor Approve" class="btn-success"
+                            invisible="state != 'floor_pending'"/>
+                    <button name="action_floor_reject" type="object"
+                            string="Floor Reject" class="btn-danger"
+                            invisible="state != 'floor_pending'"/>
+                    <!-- Reset rejected -->
+                    <button name="action_reset_rejected" type="object"
+                            string="Reset to Draft"
+                            invisible="state != 'rejected'"/>
+                    <!-- Submit to FRS -->
+                    <button name="action_generate_csv" type="object"
+                            string="Generate &amp; Submit CSV"
+                            invisible="state != 'floor_approved'"/>
+                    <button name="action_export_budget_csv" type="object"
+                            string="Export Budget CSV"
+                            class="btn-secondary"/>
+                    <button name="action_export_budget_xlsx" type="object"
+                            string="Export Excel"
+                            class="btn-secondary"/>
+                    <button name="action_print_budget_report" type="object"
+                            string="Preview Report"
+                            icon="fa-eye"
+                            class="btn-secondary"/>
+                    <button name="action_download_budget_pdf" type="object"
+                            string="Download PDF"
+                            icon="fa-download"
+                            class="btn-secondary"/>
+                    <button name="action_reset_draft" type="object"
+                            string="Reset to Draft"
+                            invisible="state in ('draft', 'rejected')"
+                            groups="elksfrs.group_elksfrs_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,board_pending,board_approved,floor_pending,floor_approved,submitted"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_transfers" type="object"
+                                class="oe_stat_button" icon="fa-exchange"
+                                invisible="transfer_count == 0">
+                            <field name="transfer_count" widget="statinfo"
+                                   string="Transfers"/>
+                        </button>
+                        <button name="action_view_amendments" type="object"
+                                class="oe_stat_button" icon="fa-pencil-square-o"
+                                invisible="amendment_count == 0">
+                            <field name="amendment_count" widget="statinfo"
+                                   string="Amendments"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <div invisible="net_budget >= 0"
+                         class="alert alert-warning" role="alert">
+                        <strong>Warning:</strong> Planned expenses
+                        ($<field name="total_expense" class="d-inline" nolabel="1"/>)
+                        exceed projected income
+                        ($<field name="total_income" class="d-inline" nolabel="1"/>).
+                        Per the AA Manual, the budget including all activities
+                        cannot be negative.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="lodge_year"/>
+                            <field name="fiscal_year_end"/>
+                            <field name="version"/>
+                        </group>
+                        <group>
+                            <field name="total_income" string="Projected Income"/>
+                            <field name="total_expense" string="Planned Expenses"/>
+                            <field name="net_budget"
+                                   decoration-success="net_budget &gt;= 0"
+                                   decoration-danger="net_budget &lt; 0"/>
+                        </group>
+                    </group>
+                    <group string="CSV Export" invisible="not csv_file">
+                        <field name="csv_file" filename="csv_filename"/>
+                        <field name="csv_filename" invisible="True"/>
+                    </group>
+                    <div invisible="state not in ('board_approved', 'floor_approved')"
+                         class="alert alert-info" role="alert">
+                        <strong>Budget is locked.</strong>
+                        To change budget lines, use a
+                        <em>Transfer</em> (move between lines) or
+                        <em>Amendment</em> (increase/decrease requiring floor vote).
+                    </div>
+
+                    <notebook>
+                        <!-- ===== PROFIT & LOSS (primary tab) ===== -->
+                        <page string="Profit &amp; Loss" name="pnl">
+                            <!-- Summary KPIs -->
+                            <div class="row mb-3 mt-2">
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm"
+                                         style="border-left:4px solid #28a745 !important;">
+                                        <div class="card-body p-2 text-center">
+                                            <div class="text-muted small">Total Income</div>
+                                            <div class="h5 mb-0">
+                                                <field name="actual_income" widget="monetary"/>
+                                            </div>
+                                            <div class="small text-muted">
+                                                of <field name="total_income" widget="monetary" class="d-inline"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm"
+                                         style="border-left:4px solid #dc3545 !important;">
+                                        <div class="card-body p-2 text-center">
+                                            <div class="text-muted small">Total Expenses</div>
+                                            <div class="h5 mb-0">
+                                                <field name="actual_expense" widget="monetary"/>
+                                            </div>
+                                            <div class="small text-muted">
+                                                of <field name="total_expense" widget="monetary" class="d-inline"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm"
+                                         style="border-left:4px solid #007bff !important;">
+                                        <div class="card-body p-2 text-center">
+                                            <div class="text-muted small">Net Income</div>
+                                            <div class="h5 mb-0"
+                                                 style="color: inherit;">
+                                                <field name="actual_net" widget="monetary"/>
+                                            </div>
+                                            <div class="small text-muted">
+                                                budget: <field name="net_budget" widget="monetary" class="d-inline"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm"
+                                         style="border-left:4px solid #ffc107 !important;">
+                                        <div class="card-body p-2 text-center">
+                                            <div class="text-muted small">Income Variance</div>
+                                            <div class="h5 mb-0">
+                                                <field name="income_variance" widget="monetary"/>
+                                            </div>
+                                            <div class="small text-muted">
+                                                Expense: <field name="expense_variance" widget="monetary" class="d-inline"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Full P&L statement -->
+                            <field name="pnl_html" class="w-100"/>
+                        </page>
+
+                        <!-- ===== ALL LINES (detail tab) ===== -->
+                        <page string="All Budget Lines" name="actuals">
+                            <field name="line_ids" readonly="1">
+                                <list decoration-danger="is_over_budget"
+                                      decoration-muted="amount == 0 and actual_amount == 0">
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="account_code"/>
+                                    <field name="account_id"/>
+                                    <field name="account_type"/>
+                                    <field name="department_id"/>
+                                    <field name="amount" sum="Budgeted"/>
+                                    <field name="actual_amount" sum="Actual"/>
+                                    <field name="variance" sum="Variance"
+                                           decoration-success="variance &gt;= 0"
+                                           decoration-danger="variance &lt; 0"/>
+                                    <field name="percent_used" widget="percentage"/>
+                                    <field name="is_over_budget" widget="boolean_toggle"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- ===== INCOME PROJECTIONS ===== -->
+                        <page string="Income Projections" name="income">
+                            <field name="income_line_ids"
+                                   readonly="state != 'draft'">
+                                <list editable="bottom"
+                                      decoration-muted="amount == 0 and actual_amount == 0">
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="account_code" optional="show"/>
+                                    <field name="account_id"
+                                           domain="[('is_header', '=', False), ('account_type', '=', 'income')]"/>
+                                    <field name="account_type" column_invisible="1"/>
+                                    <field name="department_id" optional="show"/>
+                                    <field name="amount" string="Projected" sum="Total Projected"/>
+                                    <field name="actual_amount" readonly="1"
+                                           string="Actual Received" sum="Total Received"
+                                           decoration-bf="actual_amount &gt; 0"/>
+                                    <button name="action_view_actual_journal_lines"
+                                            type="object" icon="fa-search"
+                                            title="View journal entries"
+                                            invisible="actual_amount == 0"/>
+                                    <field name="variance" readonly="1" sum="Variance"
+                                           string="Over/Under"
+                                           decoration-success="variance &gt;= 0"
+                                           decoration-danger="variance &lt; 0"/>
+                                    <field name="percent_used" readonly="1" widget="percentage"
+                                           string="% Received"/>
+                                    <field name="note" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- ===== EXPENSE BUDGET ===== -->
+                        <page string="Expense Budget" name="expenses">
+                            <field name="expense_line_ids"
+                                   readonly="state != 'draft'">
+                                <list editable="bottom"
+                                      decoration-danger="is_over_budget"
+                                      decoration-muted="amount == 0 and actual_amount == 0">
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="account_code" optional="show"/>
+                                    <field name="account_id"
+                                           domain="[('is_header', '=', False), ('account_type', 'in', ('expense', 'cogs'))]"/>
+                                    <field name="account_type" column_invisible="1"/>
+                                    <field name="department_id" optional="show"/>
+                                    <field name="amount" string="Budgeted" sum="Total Budgeted"/>
+                                    <field name="actual_amount" readonly="1" sum="Total Actual"
+                                           decoration-bf="actual_amount &gt; 0"/>
+                                    <field name="encumbered_amount" readonly="1"
+                                           sum="Total Encumbered" optional="show"
+                                           decoration-warning="encumbered_amount &gt; 0"/>
+                                    <field name="available_amount" readonly="1"
+                                           sum="Total Available" optional="show"
+                                           decoration-success="available_amount &gt; 0"
+                                           decoration-danger="available_amount &lt; 0"/>
+                                    <button name="action_view_actual_journal_lines"
+                                            type="object" icon="fa-search"
+                                            title="View journal entries"
+                                            invisible="actual_amount == 0"/>
+                                    <field name="variance" readonly="1" sum="Variance"
+                                           decoration-success="variance &gt;= 0"
+                                           decoration-danger="variance &lt; 0"/>
+                                    <field name="percent_used" readonly="1" widget="percentage"/>
+                                    <field name="is_over_budget" readonly="1" optional="show"
+                                           widget="boolean_toggle"/>
+                                    <field name="note" optional="show"/>
+                                    <button name="action_open_detail" type="object"
+                                            icon="fa-external-link"
+                                            title="View details"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Budget vs Actual list view (all lines across budgets) ===== -->
+    <record id="view_budget_vs_actual_tree" model="ir.ui.view">
+        <field name="name">elks.budget.line.vs.actual</field>
+        <field name="model">elks.budget.line</field>
+        <field name="arch" type="xml">
+            <list string="Budget vs Actual"
+                  decoration-danger="is_over_budget"
+                  decoration-success="variance &gt; 0 and not is_over_budget">
+                <field name="currency_id" column_invisible="1"/>
+                <field name="budget_id"/>
+                <field name="account_code"/>
+                <field name="account_id"/>
+                <field name="account_type"/>
+                <field name="department_id"/>
+                <field name="amount" sum="Budgeted"/>
+                <field name="actual_amount" sum="Actual"/>
+                <field name="variance" sum="Variance"
+                       decoration-success="variance &gt;= 0"
+                       decoration-danger="variance &lt; 0"/>
+                <field name="percent_used" widget="percentage"/>
+                <field name="is_over_budget"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_budget_vs_actual_search" model="ir.ui.view">
+        <field name="name">elks.budget.line.vs.actual.search</field>
+        <field name="model">elks.budget.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="budget_id"/>
+                <field name="account_id"/>
+                <field name="department_id"/>
+                <filter name="filter_income" string="Income"
+                        domain="[('account_type', '=', 'income')]"/>
+                <filter name="filter_expense" string="Expenses"
+                        domain="[('account_type', 'in', ['expense', 'cogs'])]"/>
+                <group>
+                    <filter name="group_budget" string="Budget"
+                            context="{'group_by': 'budget_id'}"/>
+                    <filter name="group_type" string="Account Type"
+                            context="{'group_by': 'account_type'}"/>
+                    <filter name="group_department" string="Department"
+                            context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- NOTE: Pivot/graph views removed — actual_amount and variance are
+         non-stored computed fields and cannot serve as SQL-aggregated measures.
+         Use the Budget Report (PDF/Excel export) for budget-vs-actual analysis. -->
+
+    <!-- ===== Actions ===== -->
+    <record id="action_elks_budget" model="ir.actions.act_window">
+        <field name="name">Budgets</field>
+        <field name="res_model">elks.budget</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Monthly breakdown view: journal entry lines pivoted by month -->
+    <record id="view_monthly_activity_pivot" model="ir.ui.view">
+        <field name="name">elks.journal.entry.line.monthly.pivot</field>
+        <field name="model">elks.journal.entry.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Monthly Activity">
+                <field name="account_id" type="row"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="credit" type="measure"/>
+                <field name="debit" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_monthly_activity_graph" model="ir.ui.view">
+        <field name="name">elks.journal.entry.line.monthly.graph</field>
+        <field name="model">elks.journal.entry.line</field>
+        <field name="arch" type="xml">
+            <graph string="Monthly Activity" type="bar">
+                <field name="date" interval="month"/>
+                <field name="credit" type="measure"/>
+                <field name="debit" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_monthly_activity" model="ir.actions.act_window">
+        <field name="name">Monthly Activity</field>
+        <field name="res_model">elks.journal.entry.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="domain">[('entry_state', '=', 'posted')]</field>
+    </record>
+
+    <record id="action_budget_vs_actual" model="ir.actions.act_window">
+        <field name="name">Budget vs Actual</field>
+        <field name="res_model">elks.budget.line</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_budget_vs_actual_search"/>
+        <field name="context">{
+            'search_default_group_budget': 1,
+            'search_default_group_type': 1,
+        }</field>
+    </record>
+</odoo>

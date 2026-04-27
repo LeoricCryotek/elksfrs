@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         BUDGET TRANSFER views
+         ============================================================ -->
+
+    <record id="view_elks_budget_transfer_tree" model="ir.ui.view">
+        <field name="name">elks.budget.transfer.tree</field>
+        <field name="model">elks.budget.transfer</field>
+        <field name="arch" type="xml">
+            <list string="Budget Transfers"
+                  decoration-info="state == 'draft'"
+                  decoration-success="state == 'done'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="transfer_date"/>
+                <field name="budget_id"/>
+                <field name="from_line_id"/>
+                <field name="to_line_id"/>
+                <field name="amount" sum="Total"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'done'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_budget_transfer_form" model="ir.ui.view">
+        <field name="name">elks.budget.transfer.form</field>
+        <field name="model">elks.budget.transfer</field>
+        <field name="arch" type="xml">
+            <form string="Budget Transfer">
+                <header>
+                    <button name="action_confirm" type="object"
+                            string="Confirm Transfer" class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="This will move budget dollars between lines. Continue?"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel"
+                            invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="budget_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="transfer_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="requested_by"/>
+                        </group>
+                        <group>
+                            <field name="from_line_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="to_line_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="amount"
+                                   readonly="state != 'draft'"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason"
+                               readonly="state != 'draft'"
+                               placeholder="Why is this transfer needed?"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_elks_budget_transfer_search" model="ir.ui.view">
+        <field name="name">elks.budget.transfer.search</field>
+        <field name="model">elks.budget.transfer</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="budget_id"/>
+                <field name="from_line_id"/>
+                <field name="to_line_id"/>
+                <separator/>
+                <filter name="draft" string="Draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="done" string="Completed"
+                        domain="[('state', '=', 'done')]"/>
+                <group>
+                    <filter name="group_budget" string="Budget"
+                            context="{'group_by': 'budget_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_elks_budget_transfer" model="ir.actions.act_window">
+        <field name="name">Budget Transfers</field>
+        <field name="res_model">elks.budget.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_budget_transfer_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a budget transfer
+            </p>
+            <p>
+                Transfers move budgeted dollars from one line to another
+                within the same approved budget.  The overall budget total
+                does not change.
+            </p>
+        </field>
+    </record>
+
+
+    <!-- ============================================================
+         BUDGET AMENDMENT views
+         ============================================================ -->
+
+    <record id="view_elks_budget_amendment_tree" model="ir.ui.view">
+        <field name="name">elks.budget.amendment.tree</field>
+        <field name="model">elks.budget.amendment</field>
+        <field name="arch" type="xml">
+            <list string="Budget Amendments"
+                  decoration-info="state == 'draft'"
+                  decoration-warning="state == 'proposed'"
+                  decoration-success="state == 'approved'"
+                  decoration-danger="state == 'rejected'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="title"/>
+                <field name="budget_id"/>
+                <field name="total_change" sum="Net Change"/>
+                <field name="proposed_by"/>
+                <field name="vote_date"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'proposed'"
+                       decoration-success="state == 'approved'"
+                       decoration-danger="state == 'rejected'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_budget_amendment_form" model="ir.ui.view">
+        <field name="name">elks.budget.amendment.form</field>
+        <field name="model">elks.budget.amendment</field>
+        <field name="arch" type="xml">
+            <form string="Budget Amendment">
+                <header>
+                    <button name="action_propose" type="object"
+                            string="Submit for Floor Vote"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_record_vote_passed" type="object"
+                            string="Record Vote: Passed"
+                            class="btn-primary"
+                            invisible="state != 'proposed'"
+                            confirm="This will apply the amendment to the budget. Continue?"/>
+                    <button name="action_record_vote_failed" type="object"
+                            string="Record Vote: Failed"
+                            class="btn-secondary"
+                            invisible="state != 'proposed'"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel"
+                            invisible="state in ('approved', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,proposed,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="budget_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="title"
+                                   readonly="state not in ('draft', 'proposed')"/>
+                            <field name="proposed_by"/>
+                            <field name="proposed_date"
+                                   invisible="not proposed_date"/>
+                        </group>
+                        <group>
+                            <field name="total_change"/>
+                            <field name="vote_date"
+                                   invisible="not vote_date"/>
+                            <field name="vote_result"
+                                   invisible="not vote_result"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="justification"
+                               readonly="state not in ('draft', 'proposed')"
+                               placeholder="Why is this amendment needed? What will it fund?"/>
+                    </group>
+
+                    <field name="line_ids"
+                           readonly="state not in ('draft', 'proposed')">
+                        <list editable="bottom">
+                            <field name="account_id"/>
+                            <field name="current_budget"/>
+                            <field name="change_amount"/>
+                            <field name="new_budget"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+
+                    <group string="Vote Notes"
+                           invisible="state not in ('approved', 'rejected')">
+                        <field name="vote_notes" nolabel="1"
+                               placeholder="Meeting minutes, vote count, etc."/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_elks_budget_amendment_search" model="ir.ui.view">
+        <field name="name">elks.budget.amendment.search</field>
+        <field name="model">elks.budget.amendment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="budget_id"/>
+                <field name="title"/>
+                <separator/>
+                <filter name="pending" string="Pending Vote"
+                        domain="[('state', '=', 'proposed')]"/>
+                <filter name="approved" string="Approved"
+                        domain="[('state', '=', 'approved')]"/>
+                <group>
+                    <filter name="group_budget" string="Budget"
+                            context="{'group_by': 'budget_id'}"/>
+                    <filter name="group_state" string="State"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_elks_budget_amendment" model="ir.actions.act_window">
+        <field name="name">Budget Amendments</field>
+        <field name="res_model">elks.budget.amendment</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_budget_amendment_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Propose a budget amendment
+            </p>
+            <p>
+                Amendments change the overall budget total and require
+                approval by floor vote.  Use a Transfer instead if you
+                just need to move money between lines.
+            </p>
+        </field>
+    </record>
+
+    <!-- Sequences -->
+    <record id="seq_budget_transfer" model="ir.sequence">
+        <field name="name">Budget Transfer</field>
+        <field name="code">elks.budget.transfer</field>
+        <field name="prefix">BT-</field>
+        <field name="padding">4</field>
+    </record>
+
+    <record id="seq_budget_amendment" model="ir.sequence">
+        <field name="name">Budget Amendment</field>
+        <field name="code">elks.budget.amendment</field>
+        <field name="prefix">BA-</field>
+        <field name="padding">4</field>
+    </record>
+
+</odoo>

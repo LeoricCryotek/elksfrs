@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Privilege: appears as a row on the User form Access Rights tab -->
+    <record id="res_groups_privilege_elksfrs" model="res.groups.privilege">
+        <field name="name">Elks FRS</field>
+        <field name="category_id" ref="base.module_category_accounting"/>
+        <field name="sequence">60</field>
+    </record>
+
+    <record id="group_elksfrs_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="privilege_id" ref="res_groups_privilege_elksfrs"/>
+        <field name="comment">Can view accounts, journal entries, and FRS submissions.</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_elksfrs_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="privilege_id" ref="res_groups_privilege_elksfrs"/>
+        <field name="sequence">10</field>
+        <field name="comment">Can create/edit journal entries, manage budgets, and generate FRS CSV exports.</field>
+        <field name="implied_ids" eval="[(4, ref('group_elksfrs_user'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+</odoo>

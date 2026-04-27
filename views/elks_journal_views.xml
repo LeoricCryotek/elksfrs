@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== Journal Entry Tree View ===== -->
+    <record id="view_elks_journal_entry_tree" model="ir.ui.view">
+        <field name="name">elks.journal.entry.tree</field>
+        <field name="model">elks.journal.entry</field>
+        <field name="arch" type="xml">
+            <list string="Journal Entries" decoration-info="state == 'draft'" decoration-muted="state == 'cancelled'">
+                <field name="entry_number"/>
+                <field name="date"/>
+                <field name="memo"/>
+                <field name="total_debit" sum="Total Debit"/>
+                <field name="total_credit" sum="Total Credit"/>
+                <field name="is_balanced" column_invisible="True"/>
+                <field name="lodge_year"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'posted'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== Journal Entry Form View ===== -->
+    <record id="view_elks_journal_entry_form" model="ir.ui.view">
+        <field name="name">elks.journal.entry.form</field>
+        <field name="model">elks.journal.entry</field>
+        <field name="arch" type="xml">
+            <form string="Journal Entry">
+                <header>
+                    <button name="action_post" type="object" string="Post"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft"
+                            invisible="state not in ('posted', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,posted"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box"/>
+                    <div class="oe_title">
+                        <h1><field name="entry_number" readonly="state != 'draft'"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="lodge_year"/>
+                        </group>
+                        <group>
+                            <field name="total_debit"/>
+                            <field name="total_credit"/>
+                            <field name="is_balanced" invisible="True"/>
+                            <div colspan="2" invisible="is_balanced"
+                                 class="alert alert-warning" role="alert">
+                                <strong>Entry is not balanced!</strong>
+                                Debits and credits must be equal.
+                            </div>
+                        </group>
+                    </group>
+                    <field name="memo" placeholder="Memo: Why is this entry needed?"
+                           readonly="state != 'draft'"/>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="account_id"/>
+                            <field name="department_id" optional="show"/>
+                            <field name="debit"/>
+                            <field name="credit"/>
+                            <field name="memo" optional="show"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Journal Entry Search View ===== -->
+    <record id="view_elks_journal_entry_search" model="ir.ui.view">
+        <field name="name">elks.journal.entry.search</field>
+        <field name="model">elks.journal.entry</field>
+        <field name="arch" type="xml">
+            <search string="Search Journal Entries">
+                <field name="entry_number"/>
+                <field name="memo"/>
+                <field name="date"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="posted" string="Posted" domain="[('state', '=', 'posted')]"/>
+                <separator/>
+                <filter name="this_year" string="Current Lodge Year"
+                        domain="[('lodge_year', '!=', False)]"/>
+                <group>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_lodge_year" string="Lodge Year" context="{'group_by': 'lodge_year'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===== Journal Lines Tree (standalone) ===== -->
+    <record id="view_elks_journal_line_tree" model="ir.ui.view">
+        <field name="name">elks.journal.entry.line.tree</field>
+        <field name="model">elks.journal.entry.line</field>
+        <field name="arch" type="xml">
+            <list string="General Ledger" create="false" edit="false">
+                <field name="date"/>
+                <field name="entry_id"/>
+                <field name="account_id"/>
+                <field name="department_id"/>
+                <field name="debit" sum="Total Debit"/>
+                <field name="credit" sum="Total Credit"/>
+                <field name="memo"/>
+                <field name="entry_state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_journal_line_search" model="ir.ui.view">
+        <field name="name">elks.journal.entry.line.search</field>
+        <field name="model">elks.journal.entry.line</field>
+        <field name="arch" type="xml">
+            <search string="Search Ledger">
+                <field name="account_id"/>
+                <field name="department_id"/>
+                <field name="memo"/>
+                <filter name="posted" string="Posted" domain="[('entry_state', '=', 'posted')]"/>
+                <group>
+                    <filter name="group_account" string="Account" context="{'group_by': 'account_id'}"/>
+                    <filter name="group_department" string="Department" context="{'group_by': 'department_id'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===== Actions ===== -->
+    <record id="action_elks_journal_entry" model="ir.actions.act_window">
+        <field name="name">Journal Entries</field>
+        <field name="res_model">elks.journal.entry</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_journal_entry_search"/>
+        <field name="context">{'search_default_draft': 0}</field>
+    </record>
+
+    <record id="action_elks_general_ledger" model="ir.actions.act_window">
+        <field name="name">General Ledger</field>
+        <field name="res_model">elks.journal.entry.line</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_elks_journal_line_search"/>
+        <field name="context">{'search_default_posted': 1}</field>
+    </record>
+</odoo>

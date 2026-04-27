@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== Top-level menu ===== -->
+    <menuitem id="menu_elksfrs_root"
+              name="Elks FRS"
+              web_icon="elksfrs,static/description/icon.png"
+              groups="group_elksfrs_user"
+              sequence="45"/>
+
+    <!-- ===== Dashboard ===== -->
+    <menuitem id="menu_elksfrs_dashboard"
+              name="Dashboard"
+              parent="menu_elksfrs_root"
+              action="action_elks_frs_dashboard_server"
+              sequence="5"/>
+
+    <!-- ===== Dues & Payments ===== -->
+    <menuitem id="menu_elksfrs_dues"
+              name="Dues &amp; Payments"
+              parent="menu_elksfrs_root"
+              sequence="8"/>
+
+    <menuitem id="menu_elksfrs_dues_payments"
+              name="Dues Payments"
+              parent="menu_elksfrs_dues"
+              action="action_elks_dues_payment"
+              sequence="10"/>
+
+    <menuitem id="menu_elksfrs_dues_deposits"
+              name="Daily Batches"
+              parent="menu_elksfrs_dues"
+              action="action_elks_dues_deposit"
+              sequence="15"/>
+
+    <menuitem id="menu_elksfrs_bank_deposits"
+              name="Bank Deposits"
+              parent="menu_elksfrs_dues"
+              action="action_elks_bank_deposit"
+              sequence="16"/>
+
+    <menuitem id="menu_elksfrs_cash_on_hand"
+              name="Cash On Hand"
+              parent="menu_elksfrs_dues"
+              action="action_elks_cash_on_hand"
+              sequence="17"/>
+
+    <menuitem id="menu_elksfrs_process_paid"
+              name="Process Paid Members"
+              parent="menu_elksfrs_dues"
+              action="action_process_paid_members_wizard"
+              groups="group_elksfrs_manager"
+              sequence="18"/>
+
+    <menuitem id="menu_elksfrs_lodge_rates"
+              name="Lodge Rates"
+              parent="menu_elksfrs_dues"
+              action="action_elks_dues_rate"
+              sequence="20"/>
+
+    <!-- ===== Accounting ===== -->
+    <menuitem id="menu_elksfrs_accounting"
+              name="Accounting"
+              parent="menu_elksfrs_root"
+              sequence="10"/>
+
+    <menuitem id="menu_elksfrs_dues_adjustments"
+              name="Dues Adjustments"
+              parent="menu_elksfrs_accounting"
+              action="action_elks_dues_adjustment"
+              sequence="5"/>
+
+    <menuitem id="menu_elksfrs_journal_entries"
+              name="Journal Entries"
+              parent="menu_elksfrs_accounting"
+              action="action_elks_journal_entry"
+              sequence="10"/>
+
+    <menuitem id="menu_elksfrs_general_ledger"
+              name="General Ledger"
+              parent="menu_elksfrs_accounting"
+              action="action_elks_general_ledger"
+              sequence="20"/>
+
+    <!-- ===== FRS Reporting ===== -->
+    <menuitem id="menu_elksfrs_reporting"
+              name="FRS Reporting"
+              parent="menu_elksfrs_root"
+              sequence="20"/>
+
+    <menuitem id="menu_elksfrs_submissions"
+              name="Monthly Submissions"
+              parent="menu_elksfrs_reporting"
+              action="action_elks_frs_submission"
+              sequence="10"/>
+
+    <menuitem id="menu_elksfrs_budgets"
+              name="Budgets"
+              parent="menu_elksfrs_reporting"
+              action="action_elks_budget"
+              sequence="20"/>
+
+    <menuitem id="menu_elksfrs_budget_transfers"
+              name="Budget Transfers"
+              parent="menu_elksfrs_reporting"
+              action="action_elks_budget_transfer"
+              sequence="22"/>
+
+    <menuitem id="menu_elksfrs_budget_amendments"
+              name="Budget Amendments"
+              parent="menu_elksfrs_reporting"
+              action="action_elks_budget_amendment"
+              sequence="23"/>
+
+    <menuitem id="menu_elksfrs_budget_vs_actual"
+              name="Budget vs Actual"
+              parent="menu_elksfrs_reporting"
+              action="action_budget_vs_actual"
+              sequence="25"/>
+
+    <menuitem id="menu_elksfrs_monthly_activity"
+              name="Monthly Activity"
+              parent="menu_elksfrs_reporting"
+              action="action_monthly_activity"
+              sequence="26"/>
+
+    <menuitem id="menu_elksfrs_export"
+              name="Export FRS CSV"
+              parent="menu_elksfrs_reporting"
+              action="action_frs_export_wizard"
+              sequence="30"/>
+
+    <!-- ===== Import ===== -->
+    <menuitem id="menu_elksfrs_import"
+              name="Import"
+              parent="menu_elksfrs_root"
+              groups="group_elksfrs_manager"
+              sequence="30"/>
+
+    <menuitem id="menu_elksfrs_import_qb"
+              name="Import from QuickBooks"
+              parent="menu_elksfrs_import"
+              action="action_qb_import_wizard"
+              sequence="10"/>
+
+    <menuitem id="menu_elksfrs_import_clover"
+              name="Import from Clover POS"
+              parent="menu_elksfrs_import"
+              action="action_clover_import_wizard"
+              sequence="20"/>
+
+    <menuitem id="menu_elksfrs_import_clms_payments"
+              name="Import CLMS Dues Payments"
+              parent="menu_elksfrs_import"
+              action="action_clms_payment_import_wizard"
+              sequence="30"/>
+
+    <!-- ===== Configuration ===== -->
+    <menuitem id="menu_elksfrs_config"
+              name="Configuration"
+              parent="menu_elksfrs_root"
+              groups="group_elksfrs_manager"
+              sequence="90"/>
+
+    <menuitem id="menu_elksfrs_coa"
+              name="Chart of Accounts"
+              parent="menu_elksfrs_config"
+              action="action_elks_account"
+              sequence="10"/>
+
+    <menuitem id="menu_elksfrs_departments"
+              name="Departments"
+              parent="menu_elksfrs_config"
+              action="action_elks_department"
+              sequence="20"/>
+
+    <menuitem id="menu_elksfrs_settings"
+              name="Lodge Settings"
+              parent="menu_elksfrs_config"
+              action="action_lodge_settings_singleton"
+              sequence="30"/>
+</odoo>

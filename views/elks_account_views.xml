@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== Chart of Accounts Tree View ===== -->
+    <record id="view_elks_account_tree" model="ir.ui.view">
+        <field name="name">elks.account.tree</field>
+        <field name="model">elks.account</field>
+        <field name="arch" type="xml">
+            <list string="Chart of Accounts" editable="bottom">
+                <field name="code"/>
+                <field name="subaccount" optional="show"/>
+                <field name="name"/>
+                <field name="account_type"/>
+                <field name="department_id"/>
+                <field name="is_restricted" optional="show"/>
+                <field name="is_header" optional="show"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== Chart of Accounts Form View ===== -->
+    <record id="view_elks_account_form" model="ir.ui.view">
+        <field name="name">elks.account.form</field>
+        <field name="model">elks.account</field>
+        <field name="arch" type="xml">
+            <form string="Elks Account">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="code" class="oe_inline"/>
+                            <span class="oe_inline" invisible="not subaccount">.</span>
+                            <field name="subaccount" class="oe_inline" invisible="not subaccount"/>
+                            <span class="oe_inline"> – </span>
+                            <field name="name" class="oe_inline"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="subaccount"/>
+                            <field name="name"/>
+                            <field name="account_type"/>
+                        </group>
+                        <group>
+                            <field name="department_id"/>
+                            <field name="parent_id"/>
+                            <field name="is_restricted"/>
+                            <field name="is_header"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Odoo Integration" name="odoo_integration">
+                        <field name="odoo_account_id"/>
+                    </group>
+                    <field name="note" placeholder="Account description or notes..."/>
+                    <field name="child_ids" string="Sub-Accounts" invisible="not child_ids">
+                        <list>
+                            <field name="code"/>
+                            <field name="subaccount"/>
+                            <field name="name"/>
+                            <field name="account_type"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Chart of Accounts Search View ===== -->
+    <record id="view_elks_account_search" model="ir.ui.view">
+        <field name="name">elks.account.search</field>
+        <field name="model">elks.account</field>
+        <field name="arch" type="xml">
+            <search string="Search Accounts">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="department_id"/>
+                <filter name="assets" string="Assets" domain="[('account_type', 'in', ['asset', 'fixed_asset'])]"/>
+                <filter name="liabilities" string="Liabilities" domain="[('account_type', '=', 'liability')]"/>
+                <filter name="equity" string="Equity" domain="[('account_type', '=', 'equity')]"/>
+                <filter name="income" string="Income" domain="[('account_type', '=', 'income')]"/>
+                <filter name="expense" string="Expenses" domain="[('account_type', 'in', ['expense', 'cogs'])]"/>
+                <filter name="restricted" string="Restricted" domain="[('is_restricted', '=', True)]"/>
+                <separator/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_department" string="Department" context="{'group_by': 'department_id'}"/>
+                    <filter name="group_type" string="Account Type" context="{'group_by': 'account_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===== Departments Tree View ===== -->
+    <record id="view_elks_department_tree" model="ir.ui.view">
+        <field name="name">elks.department.tree</field>
+        <field name="model">elks.department</field>
+        <field name="arch" type="xml">
+            <list string="Departments">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="cogs_target_pct" string="CoGS Target %"/>
+                <field name="labor_target_pct" string="Labor Target %"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_elks_department_form" model="ir.ui.view">
+        <field name="name">elks.department.form</field>
+        <field name="model">elks.department</field>
+        <field name="arch" type="xml">
+            <form string="Department">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="cogs_target_pct"/>
+                            <field name="labor_target_pct"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="Department notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Lodge Settings Form View ===== -->
+    <record id="view_elks_lodge_settings_form" model="ir.ui.view">
+        <field name="name">elks.lodge.settings.form</field>
+        <field name="model">elks.lodge.settings</field>
+        <field name="arch" type="xml">
+            <form string="Lodge FRS Settings">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Lodge Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Lodge Information">
+                            <field name="lodge_number"/>
+                            <field name="state_association"/>
+                            <field name="district"/>
+                            <field name="area"/>
+                            <separator string="Lodge Address"/>
+                            <field name="lodge_address" placeholder="3444 10th St"/>
+                            <field name="lodge_city" placeholder="Lewiston"/>
+                            <field name="lodge_state" placeholder="ID"/>
+                            <field name="lodge_zip" placeholder="83501"/>
+                            <field name="lodge_phone" widget="phone"
+                                   placeholder="(208) 743-5560"/>
+                        </group>
+                        <group string="Accounting">
+                            <field name="accounting_basis"/>
+                            <field name="fiscal_year_start_month"/>
+                            <field name="fiscal_year_start_day"/>
+                            <field name="closing_method"/>
+                        </group>
+                    </group>
+                    <group string="Lodge Branding">
+                        <group>
+                            <field name="logo_primary" widget="image"
+                                   options="{'size': [200, 200]}"/>
+                            <label for="logo_primary" string="Primary Logo (Elks USA)"/>
+                        </group>
+                        <group>
+                            <field name="logo_lodge" widget="image"
+                                   options="{'size': [200, 200]}"/>
+                            <label for="logo_lodge" string="Lodge Logo"/>
+                        </group>
+                    </group>
+                    <group string="Tax Information">
+                        <field name="tax_classification"/>
+                        <field name="group_exemption_number"/>
+                    </group>
+                    <group string="FRS Submission">
+                        <field name="frs_email"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Actions ===== -->
+    <record id="action_elks_account" model="ir.actions.act_window">
+        <field name="name">Chart of Accounts</field>
+        <field name="res_model">elks.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_account_search"/>
+    </record>
+
+    <record id="action_elks_department" model="ir.actions.act_window">
+        <field name="name">Departments</field>
+        <field name="res_model">elks.department</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Server action that finds (or creates) the singleton and opens it -->
+    <record id="action_lodge_settings_singleton" model="ir.actions.server">
+        <field name="name">Lodge Settings</field>
+        <field name="model_id" ref="model_elks_lodge_settings"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_lodge_settings()</field>
+    </record>
+</odoo>

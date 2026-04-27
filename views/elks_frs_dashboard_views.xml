@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== FRS Dashboard — Budget vs Actual Summary ===== -->
+
+    <!--
+        Dashboard form view on elks.budget: KPI cards + department breakdown.
+        This is shown as the main dashboard landing page.
+    -->
+    <record id="view_elks_budget_dashboard_form" model="ir.ui.view">
+        <field name="name">elks.budget.dashboard.form</field>
+        <field name="model">elks.budget</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form string="FRS Dashboard" create="0" edit="0" delete="0">
+                <!-- Header bar with budget name and state -->
+                <header>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,board_approved,floor_approved,submitted"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_title mb-3">
+                        <h1><field name="name" readonly="1"/></h1>
+                        <field name="lodge_year" invisible="1"/>
+                    </div>
+
+                    <!-- ===== KPI Summary Cards ===== -->
+                    <div class="row mb-4">
+                        <!-- Income Card -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-0 shadow-sm h-100"
+                                 style="border-left: 4px solid #28a745 !important;">
+                                <div class="card-body p-3">
+                                    <div class="text-muted small mb-1">
+                                        <i class="fa fa-arrow-up text-success"/>
+                                        Income
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <div>
+                                            <div class="text-muted small">Budgeted</div>
+                                            <div class="h5 mb-0">
+                                                <field name="total_income" widget="monetary"/>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="text-muted small">Actual</div>
+                                            <div class="h5 mb-0 text-success">
+                                                <field name="actual_income" widget="monetary"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 small">
+                                        Variance:
+                                        <field name="income_variance" widget="monetary"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expense Card -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-0 shadow-sm h-100"
+                                 style="border-left: 4px solid #dc3545 !important;">
+                                <div class="card-body p-3">
+                                    <div class="text-muted small mb-1">
+                                        <i class="fa fa-arrow-down text-danger"/>
+                                        Expenses
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <div>
+                                            <div class="text-muted small">Budgeted</div>
+                                            <div class="h5 mb-0">
+                                                <field name="total_expense" widget="monetary"/>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="text-muted small">Actual</div>
+                                            <div class="h5 mb-0 text-danger">
+                                                <field name="actual_expense" widget="monetary"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 small">
+                                        Under budget:
+                                        <field name="expense_variance" widget="monetary"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Net Card -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-0 shadow-sm h-100"
+                                 style="border-left: 4px solid #007bff !important;">
+                                <div class="card-body p-3">
+                                    <div class="text-muted small mb-1">
+                                        <i class="fa fa-balance-scale text-primary"/>
+                                        Net (Income − Expense)
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <div>
+                                            <div class="text-muted small">Budgeted</div>
+                                            <div class="h5 mb-0">
+                                                <field name="net_budget" widget="monetary"/>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="text-muted small">Actual</div>
+                                            <div class="h5 mb-0 text-primary">
+                                                <field name="actual_net" widget="monetary"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Links Card -->
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card border-0 shadow-sm h-100"
+                                 style="border-left: 4px solid #6c757d !important;">
+                                <div class="card-body p-3">
+                                    <div class="text-muted small mb-2">
+                                        <i class="fa fa-link"/>
+                                        Quick Links
+                                    </div>
+                                    <div class="d-flex flex-column gap-2">
+                                        <button name="action_view_budget_detail"
+                                                type="object"
+                                                class="btn btn-sm btn-outline-primary text-start"
+                                                icon="fa-list">
+                                            View Full Budget
+                                        </button>
+                                        <button name="action_view_budget_vs_actual"
+                                                type="object"
+                                                class="btn btn-sm btn-outline-secondary text-start"
+                                                icon="fa-bar-chart">
+                                            Budget vs Actual Report
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== Department Bar Chart ===== -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <field name="department_chart_html"
+                                           nolabel="1" readonly="1"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== Budget Lines by Department ===== -->
+                    <notebook>
+                        <page string="Income Lines" name="income_lines">
+                            <field name="income_line_ids" nolabel="1" readonly="1">
+                                <list decoration-success="variance &gt; 0"
+                                      decoration-danger="variance &lt; 0 and is_over_budget">
+                                    <field name="account_id"/>
+                                    <field name="department_id" optional="show"/>
+                                    <field name="amount" string="Budgeted" sum="Total Budgeted"/>
+                                    <field name="actual_amount" string="Actual" sum="Total Actual"/>
+                                    <field name="variance" sum="Total Variance"/>
+                                    <field name="percent_used" string="% Used" widget="progressbar"/>
+                                    <field name="is_over_budget" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Expense Lines" name="expense_lines">
+                            <field name="expense_line_ids" nolabel="1" readonly="1">
+                                <list decoration-success="variance &gt; 0"
+                                      decoration-danger="is_over_budget">
+                                    <field name="account_id"/>
+                                    <field name="department_id" optional="show"/>
+                                    <field name="amount" string="Budgeted" sum="Total Budgeted"/>
+                                    <field name="actual_amount" string="Actual" sum="Total Actual"/>
+                                    <field name="variance" sum="Total Variance"/>
+                                    <field name="percent_used" string="% Used" widget="progressbar"/>
+                                    <field name="is_over_budget" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+
+                    <field name="currency_id" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== FRS Submission Kanban (kept for Monthly Submissions menu) ===== -->
+    <record id="view_elks_frs_submission_kanban" model="ir.ui.view">
+        <field name="name">elks.frs.submission.kanban</field>
+        <field name="model">elks.frs.submission</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" default_group_by="state">
+                <field name="name"/>
+                <field name="state"/>
+                <field name="due_date"/>
+                <field name="is_overdue"/>
+                <field name="submission_date"/>
+                <field name="line_count"/>
+                <templates>
+                    <t t-name="card">
+                        <div>
+                            <strong><field name="name"/></strong>
+                        </div>
+                        <div>
+                            Due: <field name="due_date"/>
+                        </div>
+                        <div t-if="record.is_overdue.raw_value"
+                             class="text-danger fw-bold">
+                            OVERDUE
+                        </div>
+                        <div>
+                            <field name="line_count"/> journal lines
+                        </div>
+                        <div t-if="record.submission_date.raw_value">
+                            Submitted: <field name="submission_date"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Keep the old act_window so the external ID doesn't clash,
+         but it is no longer used by the menu. -->
+    <record id="action_elks_frs_dashboard" model="ir.actions.act_window">
+        <field name="name">FRS Dashboard (legacy)</field>
+        <field name="res_model">elks.budget</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_elks_budget_dashboard_form"/>
+        <field name="domain">[]</field>
+        <field name="limit">1</field>
+    </record>
+
+    <!-- Server action that finds the current budget and opens the dashboard -->
+    <record id="action_elks_frs_dashboard_server" model="ir.actions.server">
+        <field name="name">FRS Dashboard</field>
+        <field name="model_id" ref="model_elks_budget"/>
+        <field name="state">code</field>
+        <field name="code">action = env['elks.budget'].action_open_dashboard()</field>
+    </record>
+</odoo>

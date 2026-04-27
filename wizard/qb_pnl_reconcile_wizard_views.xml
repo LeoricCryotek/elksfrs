@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_qb_pnl_reconcile_wizard_form" model="ir.ui.view">
+        <field name="name">qb.pnl.reconcile.wizard.form</field>
+        <field name="model">qb.pnl.reconcile.wizard</field>
+        <field name="arch" type="xml">
+            <form string="QB P&amp;L Reconciliation">
+                <!-- Setup step -->
+                <group invisible="state != 'setup'">
+                    <group string="Upload QuickBooks P&amp;L">
+                        <field name="file_format" widget="radio"/>
+                        <field name="file_data" filename="file_name"
+                               string="P&amp;L File"/>
+                        <field name="file_name" invisible="True"/>
+                    </group>
+                    <group string="Options">
+                        <field name="budget_id"/>
+                        <field name="date_override"/>
+                        <field name="adjustment_account_id"/>
+                        <field name="create_missing_accounts"/>
+                    </group>
+                </group>
+
+                <!-- Done step -->
+                <div invisible="state != 'done'">
+                    <div class="alert alert-success" role="alert">
+                        <strong>Reconciliation complete!</strong>
+                        <field name="adjustment_count"/> adjustment entries
+                        created as drafts.
+                    </div>
+                    <field name="result_message" readonly="True" widget="text"/>
+                    <separator string="Reconciliation Report"/>
+                    <field name="reconciliation_html" class="w-100"/>
+                </div>
+
+                <field name="state" invisible="True"/>
+                <footer invisible="state != 'setup'">
+                    <button name="action_import_and_reconcile" type="object"
+                            string="Import &amp; Reconcile" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+                <footer invisible="state != 'done'">
+                    <button name="action_view_adjustments" type="object"
+                            string="View Adjustment Entries" class="btn-primary"
+                            invisible="adjustment_count == 0"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_qb_pnl_reconcile_wizard" model="ir.actions.act_window">
+        <field name="name">QB P&amp;L Reconciliation</field>
+        <field name="res_model">qb.pnl.reconcile.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!--
+            Elks Lodge Dues / Fee Rate Codes
+            Mapped from the CLMS Lodge Rates screen for Lewiston Lodge #896
+
+            CLMS GL mapping:
+            30100xx = Dues Income accounts
+            30110xx = Per Capita / Insurance / Fees
+            10101xx = Operating Checking (debit side)
+        -->
+
+        <!-- ===== Regular Member Dues ===== -->
+        <record id="rate_81518" model="elks.dues.rate">
+            <field name="tran_code_id">81518</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[5A] Regular - Current Dues 12 Mos Prorated</field>
+            <field name="amount">120.00</field>
+            <field name="credit_account_code">3010001</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81568" model="elks.dues.rate">
+            <field name="tran_code_id">81568</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[5B] Regular - Current Dues 1st 6 Mos Prorated</field>
+            <field name="amount">60.00</field>
+            <field name="credit_account_code">3010001</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">6</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81516" model="elks.dues.rate">
+            <field name="tran_code_id">81516</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[5F] Regular - Current Dues 12 Mos</field>
+            <field name="amount">120.00</field>
+            <field name="credit_account_code">3010003</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81509" model="elks.dues.rate">
+            <field name="tran_code_id">81509</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[5C] Regular - Current Dues 1st 6 Mos</field>
+            <field name="amount">60.00</field>
+            <field name="credit_account_code">3010003</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">6</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81515" model="elks.dues.rate">
+            <field name="tran_code_id">81515</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[5E] Regular - Current Dues 2nd 6 Mos</field>
+            <field name="amount">60.00</field>
+            <field name="credit_account_code">3010003</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">6</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <!-- ===== Grand Lodge Per Capita & Fees ===== -->
+        <record id="rate_81319" model="elks.dues.rate">
+            <field name="tran_code_id">81319</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[20] Regular - Current GL Per Capita</field>
+            <field name="amount">6.50</field>
+            <field name="credit_account_code">3011001</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81318" model="elks.dues.rate">
+            <field name="tran_code_id">81318</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[19] Regular - Current GL Insurance</field>
+            <field name="amount">23.00</field>
+            <field name="credit_account_code">3011002</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81530" model="elks.dues.rate">
+            <field name="tran_code_id">81530</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[5G] Regular - Current The Elks Magazine Per Capita</field>
+            <field name="amount">5.50</field>
+            <field name="credit_account_code">3011001</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81531" model="elks.dues.rate">
+            <field name="tran_code_id">81531</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[5H] Regular - Current ENH Per Capita</field>
+            <field name="amount">0.00</field>
+            <field name="credit_account_code">3011001</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <record id="rate_81320" model="elks.dues.rate">
+            <field name="tran_code_id">81320</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[21] Regular - Current State Fees 1</field>
+            <field name="amount">6.50</field>
+            <field name="credit_account_code">3011003</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+        </record>
+
+        <!-- ===== Life Member Dues ===== -->
+        <!-- Life dues credit to 30011 Members' Dues Life (per QB P&L) -->
+        <record id="rate_81517" model="elks.dues.rate">
+            <field name="tran_code_id">81517</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[6A] Life - Current Dues 12 Mos Prorated</field>
+            <field name="amount">50.00</field>
+            <field name="credit_account_code">3010002</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30011"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">life</field>
+        </record>
+
+        <record id="rate_81317" model="elks.dues.rate">
+            <field name="tran_code_id">81317</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[18] Life - Current Dues</field>
+            <field name="amount">50.00</field>
+            <field name="credit_account_code">3010004</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30011"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">life</field>
+        </record>
+
+        <record id="rate_81322" model="elks.dues.rate">
+            <field name="tran_code_id">81322</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[23] Life - Current GL Per Capita</field>
+            <field name="amount">6.50</field>
+            <field name="credit_account_code">3011001</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">life</field>
+        </record>
+
+        <record id="rate_81321" model="elks.dues.rate">
+            <field name="tran_code_id">81321</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[22] Life - Current GL Insurance</field>
+            <field name="amount">23.00</field>
+            <field name="credit_account_code">3011002</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">life</field>
+        </record>
+
+        <record id="rate_81533" model="elks.dues.rate">
+            <field name="tran_code_id">81533</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[6B] Life - Current The Elks Magazine Per Capita</field>
+            <field name="amount">5.50</field>
+            <field name="credit_account_code">3011001</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">life</field>
+        </record>
+
+        <record id="rate_81534" model="elks.dues.rate">
+            <field name="tran_code_id">81534</field>
+            <field name="tran_type">CLP</field>
+            <field name="name">[6C] Life - Current State Fees 1</field>
+            <field name="amount">6.50</field>
+            <field name="credit_account_code">3011003</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">life</field>
+        </record>
+
+        <!-- ===== Associate Member Dues ===== -->
+        <record id="rate_81541" model="elks.dues.rate">
+            <field name="tran_code_id">81541</field>
+            <field name="tran_type">CLP</field>
+            <field name="rate_code">A1</field>
+            <field name="name">[7A] Dues - Associate Member 12 Mos Prorated</field>
+            <field name="amount">25.00</field>
+            <field name="credit_account_code">3010007</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">associate</field>
+        </record>
+
+        <record id="rate_81325" model="elks.dues.rate">
+            <field name="tran_code_id">81325</field>
+            <field name="tran_type">CLP</field>
+            <field name="rate_code">A1</field>
+            <field name="name">[26] Dues - Associate Member 12 Mos</field>
+            <field name="amount">25.00</field>
+            <field name="credit_account_code">3010008</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">associate</field>
+        </record>
+
+        <!-- ===== Application / Initiation fees ===== -->
+        <record id="rate_app_initiation" model="elks.dues.rate">
+            <field name="tran_code_id">APP-001</field>
+            <field name="tran_type">APP</field>
+            <field name="rate_code">INIT</field>
+            <field name="name">[APP1] Application / Initiation Fee</field>
+            <field name="amount">75.00</field>
+            <field name="credit_account_code">3010010</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+            <field name="note">One-time fee paid when a candidate is initiated.</field>
+        </record>
+
+        <record id="rate_app_investigation" model="elks.dues.rate">
+            <field name="tran_code_id">APP-002</field>
+            <field name="tran_type">APP</field>
+            <field name="rate_code">INV</field>
+            <field name="name">[APP2] Application Investigation Fee</field>
+            <field name="amount">15.00</field>
+            <field name="credit_account_code">3010011</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+            <field name="note">Background / investigation fee submitted with application.</field>
+        </record>
+
+        <!-- ===== Reinstatement ===== -->
+        <record id="rate_reinstatement" model="elks.dues.rate">
+            <field name="tran_code_id">REI-001</field>
+            <field name="tran_type">REI</field>
+            <field name="rate_code">RL1</field>
+            <field name="name">[REI1] Reinstatement Fee</field>
+            <field name="amount">25.00</field>
+            <field name="credit_account_code">3010012</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">regular</field>
+            <field name="note">Fee to reinstate a member who was dropped for non-payment.</field>
+        </record>
+
+        <record id="rate_reinstatement_dues" model="elks.dues.rate">
+            <field name="tran_code_id">REI-002</field>
+            <field name="tran_type">REI</field>
+            <field name="rate_code">RL2</field>
+            <field name="name">[REI2] Reinstatement - Back Dues</field>
+            <field name="amount">120.00</field>
+            <field name="credit_account_code">3010003</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">regular</field>
+            <field name="note">Back dues owed at reinstatement.</field>
+        </record>
+
+        <!-- ===== Delinquency ===== -->
+        <record id="rate_delinquent_regular" model="elks.dues.rate">
+            <field name="tran_code_id">DEL-001</field>
+            <field name="tran_type">OTH</field>
+            <field name="rate_code">DL1</field>
+            <field name="name">[DEL1] Delinquent Dues (Regular)</field>
+            <field name="amount">120.00</field>
+            <field name="credit_account_code">3010003</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">regular</field>
+            <field name="note">Delinquent member paying back dues to stay current.</field>
+        </record>
+
+        <record id="rate_delinquent_life" model="elks.dues.rate">
+            <field name="tran_code_id">DEL-002</field>
+            <field name="tran_type">OTH</field>
+            <field name="rate_code">DL2</field>
+            <field name="name">[DEL2] Delinquent Dues (Life)</field>
+            <field name="amount">50.00</field>
+            <field name="credit_account_code">3010004</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">life</field>
+            <field name="note">Life member paying back dues.</field>
+        </record>
+
+        <!-- ===== Advance Lodge Payment (ALP) ===== -->
+        <record id="rate_alp_regular" model="elks.dues.rate">
+            <field name="tran_code_id">ALP-001</field>
+            <field name="tran_type">ALP</field>
+            <field name="rate_code">ALP</field>
+            <field name="name">[ALP1] Advance Dues (Regular)</field>
+            <field name="amount">120.00</field>
+            <field name="credit_account_code">21000</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">regular</field>
+            <field name="note">Dues paid for a future lodge year (deferred income until recognized).</field>
+        </record>
+
+        <record id="rate_alp_life" model="elks.dues.rate">
+            <field name="tran_code_id">ALP-002</field>
+            <field name="tran_type">ALP</field>
+            <field name="rate_code">ALP</field>
+            <field name="name">[ALP2] Advance Dues (Life)</field>
+            <field name="amount">50.00</field>
+            <field name="credit_account_code">21000</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">life</field>
+        </record>
+
+        <!-- ===== Charitable / Donation contributions ===== -->
+        <record id="rate_charitable_lodge" model="elks.dues.rate">
+            <field name="tran_code_id">CHR-001</field>
+            <field name="tran_type">OTH</field>
+            <field name="rate_code">CHR</field>
+            <field name="name">[CHR1] Charitable Donation (Lodge)</field>
+            <field name="amount">0.00</field>
+            <field name="credit_account_code">90100</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">all</field>
+            <field name="note">Optional member donation to the lodge's charitable fund.</field>
+        </record>
+
+        <record id="rate_charitable_enf" model="elks.dues.rate">
+            <field name="tran_code_id">CHR-002</field>
+            <field name="tran_type">OTH</field>
+            <field name="rate_code">ENF</field>
+            <field name="name">[CHR2] Elks National Foundation (ENF)</field>
+            <field name="amount">0.00</field>
+            <field name="credit_account_code">90201</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">all</field>
+            <field name="note">Optional donation to the Elks National Foundation.</field>
+        </record>
+
+        <!-- ===== New Member Dues (CLMS code 27, CNM type) ===== -->
+        <record id="rate_new_member_dues" model="elks.dues.rate">
+            <field name="tran_code_id">81540</field>
+            <field name="tran_type">CNM</field>
+            <field name="rate_code">27</field>
+            <field name="name">[27] Regular - New Member Current Dues 12 Mos Prorated</field>
+            <field name="amount">120.00</field>
+            <field name="credit_account_code">3010005</field>
+            <field name="debit_account_code">1010101</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">True</field>
+            <field name="months_covered">12</field>
+            <field name="applies_to">regular</field>
+            <field name="note">New member prorated dues from CLMS. Amount varies by initiation month.</field>
+        </record>
+
+        <!-- ===== ENF Donation (CLMS code 51, OD type) ===== -->
+        <record id="rate_enf_donation" model="elks.dues.rate">
+            <field name="tran_code_id">81551</field>
+            <field name="tran_type">OD</field>
+            <field name="rate_code">51</field>
+            <field name="name">[51] Elks National Foundation</field>
+            <field name="amount">0.00</field>
+            <field name="credit_account_code">90201</field>
+            <field name="debit_account_code">10215</field>
+            <field name="credit_account_id" ref="acct_91010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+            <field name="is_dues">False</field>
+            <field name="months_covered">0</field>
+            <field name="applies_to">all</field>
+            <field name="note">ENF donation collected with dues payment in CLMS.</field>
+        </record>
+    </data>
+
+    <!--
+        noupdate="0" block — forced on every module upgrade.
+        Sets bundle flags AND GL account links for ALL rates.
+        Account alignment matches QuickBooks P&L:
+          Regular dues        → 30010 Members' Dues Regular
+          Life dues           → 30011 Members' Dues Life
+          Per Capita/Ins/Mag  → 30020 GL Per-Capita Fees
+          State Fees          → 30021 State Assoc Per-Capita Fees
+          Associate dues      → 30010 Members' Dues Regular
+          App/Reinstate/Delq  → 30010 Members' Dues Regular
+          Advance (ALP)       → 21100 Deferred Income
+          Charitable          → 90010 Charity Income
+          Debit side (all)    → 10100 Operating Checking
+    -->
+    <data noupdate="0">
+        <!-- ===== Regular Member Dues ===== -->
+        <record id="rate_81518" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81568" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81516" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81509" model="elks.dues.rate">
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81515" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Regular GL Fees ===== -->
+        <record id="rate_81319" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30020"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81318" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30020"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81530" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30020"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81531" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30020"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81320" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30021"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Life Member Dues ===== -->
+        <record id="rate_81517" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30011"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81317" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="credit_account_id" ref="acct_30011"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Life GL Fees ===== -->
+        <record id="rate_81322" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30020"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81321" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30020"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81533" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30020"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81534" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="include_in_six_months">True</field>
+            <field name="credit_account_id" ref="acct_30021"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+
+        </record>
+
+        <!-- ===== Associate Member Dues ===== -->
+        <record id="rate_81541" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_81325" model="elks.dues.rate">
+            <field name="include_in_one_year">True</field>
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Application / Initiation ===== -->
+        <record id="rate_app_initiation" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_app_investigation" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Reinstatement ===== -->
+        <record id="rate_reinstatement" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_reinstatement_dues" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Delinquency ===== -->
+        <record id="rate_delinquent_regular" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_delinquent_life" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30011"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Advance Lodge Payment (deferred income) ===== -->
+        <record id="rate_alp_regular" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_21100"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_alp_life" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_21100"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== Charitable Donations ===== -->
+        <record id="rate_charitable_lodge" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_90010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+        <record id="rate_charitable_enf" model="elks.dues.rate">
+            <field name="credit_account_code">90201</field>
+            <field name="credit_account_id" ref="acct_91010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== New Member Dues ===== -->
+        <record id="rate_new_member_dues" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_30010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+
+        <!-- ===== ENF Donation (CLMS import) ===== -->
+        <record id="rate_enf_donation" model="elks.dues.rate">
+            <field name="credit_account_id" ref="acct_91010"/>
+            <field name="debit_account_id" ref="acct_10100"/>
+        </record>
+    </data>
+</odoo>

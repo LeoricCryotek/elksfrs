@@ -1,0 +1,1071 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!--
+            Elks Uniform Chart of Accounts
+            Per the AA Manual Chapter 4 and FRS Manual
+
+            Structure: 5-digit accounts, department-series based
+            10xxx Assets | 15xxx Fixed Assets | 20xxx Liabilities
+            21xxx Deferred Income | 23xxx Long-term Liabilities | 29xxx Equity
+            30xxx Lodge | 40xxx Bar | 50xxx Food | 60-67xxx Activities
+            90xxx+ Restricted Funds
+        -->
+
+        <!-- ============================================= -->
+        <!-- 10xxx - ASSETS (Current)                      -->
+        <!-- ============================================= -->
+        <record id="acct_10000" model="elks.account">
+            <field name="code">10000</field>
+            <field name="name">Petty Cash</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10100" model="elks.account">
+            <field name="code">10100</field>
+            <field name="name">Operating Checking Account</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10200" model="elks.account">
+            <field name="code">10200</field>
+            <field name="name">Operating Savings Account</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10300" model="elks.account">
+            <field name="code">10300</field>
+            <field name="name">Charity Checking Account</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10400" model="elks.account">
+            <field name="code">10400</field>
+            <field name="name">Charity Savings Account</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10500" model="elks.account">
+            <field name="code">10500</field>
+            <field name="name">Other Restricted Checking</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10600" model="elks.account">
+            <field name="code">10600</field>
+            <field name="name">Other Restricted Savings</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10700" model="elks.account">
+            <field name="code">10700</field>
+            <field name="name">Accounts Receivable</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10800" model="elks.account">
+            <field name="code">10800</field>
+            <field name="name">Investments - Operating</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10850" model="elks.account">
+            <field name="code">10850</field>
+            <field name="name">Investments - Restricted</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10900" model="elks.account">
+            <field name="code">10900</field>
+            <field name="name">Bar Inventory</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10901" model="elks.account">
+            <field name="code">10901</field>
+            <field name="name">Pre-Paid Expenses</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10950" model="elks.account">
+            <field name="code">10950</field>
+            <field name="name">Food Inventory</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10960" model="elks.account">
+            <field name="code">10960</field>
+            <field name="name">Lodge Supplies Inventory</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_10970" model="elks.account">
+            <field name="code">10970</field>
+            <field name="name">Other Business Inventory</field>
+            <field name="account_type">asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 15xxx - FIXED ASSETS                          -->
+        <!-- ============================================= -->
+        <record id="acct_15000" model="elks.account">
+            <field name="code">15000</field>
+            <field name="name">Land</field>
+            <field name="account_type">fixed_asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_15100" model="elks.account">
+            <field name="code">15100</field>
+            <field name="name">Building</field>
+            <field name="account_type">fixed_asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_15200" model="elks.account">
+            <field name="code">15200</field>
+            <field name="name">Accumulated Depreciation</field>
+            <field name="account_type">fixed_asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_15300" model="elks.account">
+            <field name="code">15300</field>
+            <field name="name">Furniture and Fixtures</field>
+            <field name="account_type">fixed_asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_15400" model="elks.account">
+            <field name="code">15400</field>
+            <field name="name">Equipment</field>
+            <field name="account_type">fixed_asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_15500" model="elks.account">
+            <field name="code">15500</field>
+            <field name="name">Vehicles</field>
+            <field name="account_type">fixed_asset</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 20xxx - LIABILITIES (Current)                 -->
+        <!-- ============================================= -->
+        <record id="acct_20000" model="elks.account">
+            <field name="code">20000</field>
+            <field name="name">Accounts Payable</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_20100" model="elks.account">
+            <field name="code">20100</field>
+            <field name="name">Payroll Liabilities</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_20200" model="elks.account">
+            <field name="code">20200</field>
+            <field name="name">Sales Tax Payable</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_20300" model="elks.account">
+            <field name="code">20300</field>
+            <field name="name">Credit Cards Payable</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_20400" model="elks.account">
+            <field name="code">20400</field>
+            <field name="name">Accrued Insurance</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_20500" model="elks.account">
+            <field name="code">20500</field>
+            <field name="name">Accrued Interest</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_20800" model="elks.account">
+            <field name="code">20800</field>
+            <field name="name">Accrued Property Taxes</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+
+        <!-- 21xxx - Deferred Income -->
+        <record id="acct_21100" model="elks.account">
+            <field name="code">21100</field>
+            <field name="name">Prepaid Customer Deposits</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_21800" model="elks.account">
+            <field name="code">21800</field>
+            <field name="name">Prepaid Dues</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+
+        <!-- 23xxx - Long-term Liabilities -->
+        <record id="acct_23100" model="elks.account">
+            <field name="code">23100</field>
+            <field name="name">Notes Payable</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+        <record id="acct_23200" model="elks.account">
+            <field name="code">23200</field>
+            <field name="name">Mortgage Payable</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 29xxx - EQUITY                                -->
+        <!-- ============================================= -->
+        <record id="acct_29010" model="elks.account">
+            <field name="code">29010</field>
+            <field name="name">Temporary Restricted Fund Balance - Charity</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29020" model="elks.account">
+            <field name="code">29020</field>
+            <field name="name">Temporary Restricted Fund Balance - ENF</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29030" model="elks.account">
+            <field name="code">29030</field>
+            <field name="name">Temporary Restricted Fund Balance - Youth</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29040" model="elks.account">
+            <field name="code">29040</field>
+            <field name="name">Temporary Restricted Fund Balance - Veterans</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29050" model="elks.account">
+            <field name="code">29050</field>
+            <field name="name">Temporary Restricted Fund Balance - Community</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29060" model="elks.account">
+            <field name="code">29060</field>
+            <field name="name">Temporary Restricted Fund Balance - Other</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29100" model="elks.account">
+            <field name="code">29100</field>
+            <field name="name">Temporary Restricted Fund Balance - Capital</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29110" model="elks.account">
+            <field name="code">29110</field>
+            <field name="name">Permanent Restricted Fund Balance</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_29900" model="elks.account">
+            <field name="code">29900</field>
+            <field name="name">Equity - Unrestricted Funds</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="note">This is the primary unrestricted equity account. In QuickBooks, this is automatically maintained and cannot be deleted.</field>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 30xxx - LODGE OPERATIONS                      -->
+        <!-- ============================================= -->
+        <!--
+            Income — account codes aligned to QuickBooks P&L:
+              30010 = Members' Dues Regular
+              30011 = Members' Dues Life
+              30020 = GL Per-Capita Fees
+              30021 = State Assoc Per-Capita Fees
+        -->
+        <record id="acct_30010" model="elks.account">
+            <field name="code">30010</field>
+            <field name="name">Members' Dues Regular</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30011" model="elks.account">
+            <field name="code">30011</field>
+            <field name="name">Members' Dues Life</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30020" model="elks.account">
+            <field name="code">30020</field>
+            <field name="name">GL Per-Capita Fees</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30021" model="elks.account">
+            <field name="code">30021</field>
+            <field name="name">State Assoc Per-Capita Fees</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30030" model="elks.account">
+            <field name="code">30030</field>
+            <field name="name">Initiation Fees</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30040" model="elks.account">
+            <field name="code">30040</field>
+            <field name="name">Reinstatement Fees</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30050" model="elks.account">
+            <field name="code">30050</field>
+            <field name="name">Building Assessment</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30060" model="elks.account">
+            <field name="code">30060</field>
+            <field name="name">Interest / Investment Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30070" model="elks.account">
+            <field name="code">30070</field>
+            <field name="name">Hall Rental Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30080" model="elks.account">
+            <field name="code">30080</field>
+            <field name="name">Donations / Contributions Received</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30090" model="elks.account">
+            <field name="code">30090</field>
+            <field name="name">Miscellaneous Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30100" model="elks.account">
+            <field name="code">30100</field>
+            <field name="name">Unrealized Gain / (Loss) on Investments</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30165" model="elks.account">
+            <field name="code">30165</field>
+            <field name="name">Lodge Activity Members</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+
+        <!-- Lodge Expenses -->
+        <record id="acct_30200" model="elks.account">
+            <field name="code">30200</field>
+            <field name="name">Grand Lodge Per Capita Tax</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30210" model="elks.account">
+            <field name="code">30210</field>
+            <field name="name">State Association Dues</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30220" model="elks.account">
+            <field name="code">30220</field>
+            <field name="name">Magazine Subscription</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30230" model="elks.account">
+            <field name="code">30230</field>
+            <field name="name">Printing and Postage</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30240" model="elks.account">
+            <field name="code">30240</field>
+            <field name="name">Office Supplies</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30250" model="elks.account">
+            <field name="code">30250</field>
+            <field name="name">Telephone and Internet</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30260" model="elks.account">
+            <field name="code">30260</field>
+            <field name="name">Utilities</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30270" model="elks.account">
+            <field name="code">30270</field>
+            <field name="name">Building Maintenance and Repairs</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30275" model="elks.account">
+            <field name="code">30275</field>
+            <field name="name">Janitorial</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30280" model="elks.account">
+            <field name="code">30280</field>
+            <field name="name">Insurance - Other</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30285" model="elks.account">
+            <field name="code">30285</field>
+            <field name="name">Interest Paid</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30290" model="elks.account">
+            <field name="code">30290</field>
+            <field name="name">Accounting / Legal Fees</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30300" model="elks.account">
+            <field name="code">30300</field>
+            <field name="name">Officers Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30400" model="elks.account">
+            <field name="code">30400</field>
+            <field name="name">Ritual / Supplies</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30430" model="elks.account">
+            <field name="code">30430</field>
+            <field name="name">Taxes - Real Property</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30440" model="elks.account">
+            <field name="code">30440</field>
+            <field name="name">Taxes - Personal Property</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30500" model="elks.account">
+            <field name="code">30500</field>
+            <field name="name">Depreciation</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30600" model="elks.account">
+            <field name="code">30600</field>
+            <field name="name">Bad Debt Expense</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30700" model="elks.account">
+            <field name="code">30700</field>
+            <field name="name">Miscellaneous Expense</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+
+        <!-- Lodge Employee Expenses -->
+        <record id="acct_30800" model="elks.account">
+            <field name="code">30800</field>
+            <field name="name">Salaries - Lodge</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30810" model="elks.account">
+            <field name="code">30810</field>
+            <field name="name">Payroll Taxes - Lodge</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30820" model="elks.account">
+            <field name="code">30820</field>
+            <field name="name">Workers Compensation - Lodge</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30830" model="elks.account">
+            <field name="code">30830</field>
+            <field name="name">Employee Benefits - Lodge</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 40xxx - BAR                                   -->
+        <!-- ============================================= -->
+        <!-- Bar Income -->
+        <record id="acct_40010" model="elks.account">
+            <field name="code">40010</field>
+            <field name="name">Bar Sales - Members</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40011" model="elks.account">
+            <field name="code">40011</field>
+            <field name="name">Bar Sales - Non-Members</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40020" model="elks.account">
+            <field name="code">40020</field>
+            <field name="name">Coin Operated Machines - Bar</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40090" model="elks.account">
+            <field name="code">40090</field>
+            <field name="name">Other Bar Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+
+        <!-- Bar COGS -->
+        <record id="acct_40200" model="elks.account">
+            <field name="code">40200</field>
+            <field name="name">Bar Purchases - General</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40210" model="elks.account">
+            <field name="code">40210</field>
+            <field name="name">Liquor Purchases</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40211" model="elks.account">
+            <field name="code">40211</field>
+            <field name="name">Beer Purchases</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40212" model="elks.account">
+            <field name="code">40212</field>
+            <field name="name">Wine Purchases</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40213" model="elks.account">
+            <field name="code">40213</field>
+            <field name="name">Soda and Mixer Purchases</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40220" model="elks.account">
+            <field name="code">40220</field>
+            <field name="name">Bar Supplies</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+
+        <!-- Bar Operating Expenses -->
+        <record id="acct_40300" model="elks.account">
+            <field name="code">40300</field>
+            <field name="name">Bar Operating Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40400" model="elks.account">
+            <field name="code">40400</field>
+            <field name="name">Liquor License</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40500" model="elks.account">
+            <field name="code">40500</field>
+            <field name="name">Bar Insurance</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+
+        <!-- Bar Employee Expenses -->
+        <record id="acct_40800" model="elks.account">
+            <field name="code">40800</field>
+            <field name="name">Salaries - Bar</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40810" model="elks.account">
+            <field name="code">40810</field>
+            <field name="name">Payroll Taxes - Bar</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+        <record id="acct_40820" model="elks.account">
+            <field name="code">40820</field>
+            <field name="name">Workers Compensation - Bar</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_bar"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 50xxx - FOOD SERVICE                          -->
+        <!-- ============================================= -->
+        <!-- Food Income -->
+        <record id="acct_50010" model="elks.account">
+            <field name="code">50010</field>
+            <field name="name">Food Sales - Members</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+        <record id="acct_50011" model="elks.account">
+            <field name="code">50011</field>
+            <field name="name">Food Sales - Non-Members</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+        <record id="acct_50100" model="elks.account">
+            <field name="code">50100</field>
+            <field name="name">Banquet / Catering Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+        <record id="acct_50110" model="elks.account">
+            <field name="code">50110</field>
+            <field name="name">Special Events Food</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+
+        <!-- Food COGS -->
+        <record id="acct_50200" model="elks.account">
+            <field name="code">50200</field>
+            <field name="name">Food Purchases - General</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+        <record id="acct_50205" model="elks.account">
+            <field name="code">50205</field>
+            <field name="name">Food Purchases</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+        <record id="acct_50210" model="elks.account">
+            <field name="code">50210</field>
+            <field name="name">Kitchen Supplies</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+
+        <!-- Food Operating Expenses -->
+        <record id="acct_50300" model="elks.account">
+            <field name="code">50300</field>
+            <field name="name">Food Service Operating Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+
+        <!-- Food Employee Expenses -->
+        <record id="acct_50800" model="elks.account">
+            <field name="code">50800</field>
+            <field name="name">Salaries - Food Service</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+        <record id="acct_50810" model="elks.account">
+            <field name="code">50810</field>
+            <field name="name">Payroll Taxes - Food Service</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+        <record id="acct_50820" model="elks.account">
+            <field name="code">50820</field>
+            <field name="name">Workers Compensation - Food Service</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_food"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 60xxx - ENTERTAINMENT / SOCIAL                -->
+        <!-- ============================================= -->
+        <record id="acct_60010" model="elks.account">
+            <field name="code">60010</field>
+            <field name="name">Entertainment Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_entertainment"/>
+        </record>
+        <record id="acct_60200" model="elks.account">
+            <field name="code">60200</field>
+            <field name="name">Entertainment Purchases</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_entertainment"/>
+        </record>
+        <record id="acct_60300" model="elks.account">
+            <field name="code">60300</field>
+            <field name="name">Entertainment Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_entertainment"/>
+        </record>
+        <record id="acct_60800" model="elks.account">
+            <field name="code">60800</field>
+            <field name="name">Salaries - Entertainment</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_entertainment"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 61xxx - FITNESS / POOL                        -->
+        <!-- ============================================= -->
+        <record id="acct_61010" model="elks.account">
+            <field name="code">61010</field>
+            <field name="name">Fitness / Pool Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_fitness"/>
+        </record>
+        <record id="acct_61300" model="elks.account">
+            <field name="code">61300</field>
+            <field name="name">Fitness / Pool Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_fitness"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 62xxx - GOLF                                  -->
+        <!-- ============================================= -->
+        <record id="acct_62010" model="elks.account">
+            <field name="code">62010</field>
+            <field name="name">Golf Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_golf"/>
+        </record>
+        <record id="acct_62300" model="elks.account">
+            <field name="code">62300</field>
+            <field name="name">Golf Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_golf"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 63xxx - BOWLING                               -->
+        <!-- ============================================= -->
+        <record id="acct_63010" model="elks.account">
+            <field name="code">63010</field>
+            <field name="name">Bowling Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_bowling"/>
+        </record>
+        <record id="acct_63300" model="elks.account">
+            <field name="code">63300</field>
+            <field name="name">Bowling Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_bowling"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 64xxx - RV PARK / CAMPING                     -->
+        <!-- ============================================= -->
+        <record id="acct_64010" model="elks.account">
+            <field name="code">64010</field>
+            <field name="name">RV Park / Camping Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_rv"/>
+        </record>
+        <record id="acct_64300" model="elks.account">
+            <field name="code">64300</field>
+            <field name="name">RV Park / Camping Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_rv"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 65xxx - SHOOTING RANGE / SKEET                -->
+        <!-- ============================================= -->
+        <record id="acct_65010" model="elks.account">
+            <field name="code">65010</field>
+            <field name="name">Shooting Range Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_shooting"/>
+        </record>
+        <record id="acct_65300" model="elks.account">
+            <field name="code">65300</field>
+            <field name="name">Shooting Range Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_shooting"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 66xxx - RENTAL ACTIVITIES (16.030 Corp)       -->
+        <!-- ============================================= -->
+        <record id="acct_66010" model="elks.account">
+            <field name="code">66010</field>
+            <field name="name">Rental Income - 16.030 Corporation</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_rental"/>
+        </record>
+        <record id="acct_66300" model="elks.account">
+            <field name="code">66300</field>
+            <field name="name">Rental Expenses - 16.030 Corporation</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_rental"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 67xxx - OTHER BUSINESS OPERATIONS             -->
+        <!-- ============================================= -->
+        <record id="acct_67010" model="elks.account">
+            <field name="code">67010</field>
+            <field name="name">Other Business Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_other"/>
+        </record>
+        <record id="acct_67200" model="elks.account">
+            <field name="code">67200</field>
+            <field name="name">Other Business COGS</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_other"/>
+        </record>
+        <record id="acct_67275" model="elks.account">
+            <field name="code">67275</field>
+            <field name="name">Misc. / Unassigned</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_other"/>
+        </record>
+        <record id="acct_67300" model="elks.account">
+            <field name="code">67300</field>
+            <field name="name">Other Business Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_other"/>
+        </record>
+
+        <!-- ============================================= -->
+        <!-- 90xxx+ - RESTRICTED FUND ACTIVITIES           -->
+        <!-- ============================================= -->
+        <!-- Charity -->
+        <record id="acct_90010" model="elks.account">
+            <field name="code">90010</field>
+            <field name="name">Charity Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_90200" model="elks.account">
+            <field name="code">90200</field>
+            <field name="name">Charity COGS</field>
+            <field name="account_type">cogs</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_90300" model="elks.account">
+            <field name="code">90300</field>
+            <field name="name">Charity Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_90400" model="elks.account">
+            <field name="code">90400</field>
+            <field name="name">Charity Donations Made</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- ENF -->
+        <record id="acct_91010" model="elks.account">
+            <field name="code">91010</field>
+            <field name="name">ENF Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_91300" model="elks.account">
+            <field name="code">91300</field>
+            <field name="name">ENF Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- Youth -->
+        <record id="acct_92010" model="elks.account">
+            <field name="code">92010</field>
+            <field name="name">Youth Activities Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_92300" model="elks.account">
+            <field name="code">92300</field>
+            <field name="name">Youth Activities Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- Veterans -->
+        <record id="acct_93010" model="elks.account">
+            <field name="code">93010</field>
+            <field name="name">Veterans Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_93300" model="elks.account">
+            <field name="code">93300</field>
+            <field name="name">Veterans Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- Community -->
+        <record id="acct_94010" model="elks.account">
+            <field name="code">94010</field>
+            <field name="name">Community Activities Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_94300" model="elks.account">
+            <field name="code">94300</field>
+            <field name="name">Community Activities Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- Other Restricted -->
+        <record id="acct_95010" model="elks.account">
+            <field name="code">95010</field>
+            <field name="name">Other Restricted Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_95300" model="elks.account">
+            <field name="code">95300</field>
+            <field name="name">Other Restricted Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- Capital Restricted -->
+        <record id="acct_96010" model="elks.account">
+            <field name="code">96010</field>
+            <field name="name">Capital Fund Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_96300" model="elks.account">
+            <field name="code">96300</field>
+            <field name="name">Capital Fund Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- Permanent Restricted -->
+        <record id="acct_97010" model="elks.account">
+            <field name="code">97010</field>
+            <field name="name">Permanent Restricted Income</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+        <record id="acct_97300" model="elks.account">
+            <field name="code">97300</field>
+            <field name="name">Permanent Restricted Expenses</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+        </record>
+
+        <!-- Year-End Closing Accounts (Appendix J method 1) -->
+        <record id="acct_99001" model="elks.account">
+            <field name="code">99001</field>
+            <field name="name">Year-End Closing - Restricted Revenue</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+            <field name="note">Used in the Year-End Closing Accounts method (preferred) per Appendix J.</field>
+        </record>
+        <record id="acct_99002" model="elks.account">
+            <field name="code">99002</field>
+            <field name="name">Year-End Closing - Restricted Expense</field>
+            <field name="account_type">equity</field>
+            <field name="department_id" ref="dept_restricted"/>
+            <field name="is_restricted">True</field>
+            <field name="note">Used in the Year-End Closing Accounts method (preferred) per Appendix J.</field>
+        </record>
+
+        <!-- ===== Additional accounts added for Lodge Assistance and
+             Approved Maintenance Commitments tracking ===== -->
+        <record id="acct_31000" model="elks.account">
+            <field name="code">31000</field>
+            <field name="name">Lodge Member Assistance</field>
+            <field name="account_type">expense</field>
+            <field name="department_id" ref="dept_lodge"/>
+            <field name="note">Expense recorded when the lodge covers part of a member's dues or fees via the "Lodge Assisted" flag on a dues payment line.</field>
+        </record>
+
+        <record id="acct_20950" model="elks.account">
+            <field name="code">20950</field>
+            <field name="name">Approved Maintenance Commitments</field>
+            <field name="account_type">liability</field>
+            <field name="department_id" ref="dept_balance_sheet"/>
+            <field name="note">Liability offset for approved deferred-maintenance items awaiting completion (used by elksmaintenance module).</field>
+        </record>
+    </data>
+
+    <!--
+        Force-update accounts on module upgrade to align with QuickBooks P&L.
+        The noupdate="1" block above won't re-run, so we need this.
+    -->
+    <data noupdate="0">
+        <record id="acct_30010" model="elks.account">
+            <field name="name">Members' Dues Regular</field>
+        </record>
+        <record id="acct_30011" model="elks.account">
+            <field name="code">30011</field>
+            <field name="name">Members' Dues Life</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30020" model="elks.account">
+            <field name="code">30020</field>
+            <field name="name">GL Per-Capita Fees</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+        <record id="acct_30021" model="elks.account">
+            <field name="code">30021</field>
+            <field name="name">State Assoc Per-Capita Fees</field>
+            <field name="account_type">income</field>
+            <field name="department_id" ref="dept_lodge"/>
+        </record>
+
+        <!--
+            Account name corrections are now handled by the budget
+            import wizard — it auto-fixes names when importing Excel.
+        -->
+    </data>
+</odoo>

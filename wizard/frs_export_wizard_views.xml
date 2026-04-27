@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_frs_export_wizard_form" model="ir.ui.view">
+        <field name="name">frs.export.wizard.form</field>
+        <field name="model">frs.export.wizard</field>
+        <field name="arch" type="xml">
+            <form string="FRS CSV Export">
+                <group invisible="state != 'setup'">
+                    <field name="export_type" widget="radio"/>
+                    <field name="period_start" invisible="export_type != 'actuals'"/>
+                    <field name="period_end" invisible="export_type != 'actuals'"/>
+                    <field name="budget_id" invisible="export_type != 'budget'"/>
+                </group>
+                <group invisible="state != 'done'">
+                    <div class="alert alert-success" role="alert">
+                        <strong>CSV generated successfully!</strong>
+                        Download the file below.
+                    </div>
+                    <field name="csv_file" filename="csv_filename"/>
+                    <field name="csv_filename" invisible="True"/>
+                </group>
+                <field name="state" invisible="True"/>
+                <footer invisible="state != 'setup'">
+                    <button name="action_export" type="object"
+                            string="Generate CSV" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+                <footer invisible="state != 'done'">
+                    <button string="Close" class="btn-primary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_frs_export_wizard" model="ir.actions.act_window">
+        <field name="name">Export FRS CSV</field>
+        <field name="res_model">frs.export.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_process_paid_members_wizard_form" model="ir.ui.view">
+        <field name="name">process.paid.members.wizard.form</field>
+        <field name="model">process.paid.members.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Process Paid Members">
+                <group invisible="state != 'setup'">
+                    <group string="Options">
+                        <field name="payment_date"/>
+                        <field name="include_regular"/>
+                        <field name="include_life"/>
+                        <field name="include_associate"/>
+                    </group>
+                    <group string="Preview">
+                        <field name="preview_regular" string="Regular"/>
+                        <field name="preview_life" string="Life"/>
+                        <field name="preview_associate" string="Associate"/>
+                        <field name="preview_total" string="Total to Create"/>
+                        <field name="preview_already"
+                               string="Already Have Payment"/>
+                    </group>
+                </group>
+
+                <div class="alert alert-info" role="alert"
+                     invisible="state != 'setup'">
+                    <strong>What this does:</strong> Creates a Dues Payment
+                    record for each paid member who doesn't already have one
+                    for the current lodge year. Each payment includes the
+                    full rate bundle (dues + per capita + insurance + magazine
+                    + state fees) and is automatically posted with a journal
+                    entry.
+                </div>
+
+                <div class="alert alert-warning" role="alert"
+                     invisible="state != 'setup' or preview_total &lt; 100">
+                    <strong>Large batch:</strong> Processing
+                    <field name="preview_total" class="d-inline" nolabel="1"/>
+                    members may take a few minutes. Each member gets an
+                    individual payment record with journal entry.
+                </div>
+
+                <!-- Results -->
+                <group invisible="state != 'done'">
+                    <field name="result_message" readonly="1"
+                           widget="text" nolabel="1"/>
+                </group>
+
+                <footer invisible="state != 'setup'">
+                    <button name="action_process" type="object"
+                            string="Process Paid Members"
+                            class="btn-primary"
+                            confirm="This will create payment records for all qualifying paid members. Continue?"/>
+                    <button string="Cancel" class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+                <footer invisible="state != 'done'">
+                    <button string="Close" class="btn-primary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_process_paid_members_wizard" model="ir.actions.act_window">
+        <field name="name">Process Paid Members</field>
+        <field name="res_model">process.paid.members.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>
