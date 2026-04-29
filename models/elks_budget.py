@@ -1042,8 +1042,10 @@ class ElksBudgetLine(models.Model):
         help="Budgeted annual amount for this account.",
     )
     currency_id = fields.Many2one(
+        "res.currency",
         related="budget_id.currency_id",
         store=True,
+        default=lambda self: self.env.company.currency_id,
     )
     note = fields.Char("Note")
 

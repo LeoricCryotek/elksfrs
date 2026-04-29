@@ -33,6 +33,7 @@ PAYMENT_TYPES = [
     ('one_year', 'One Year Dues Payment'),
     ('one_year_life', 'Life Member Dues Payment'),
     ('six_months', 'Six Months Dues Payment'),
+    ('prorated', 'Pro-Rated Dues Payment'),
     ('custom', 'Custom / Misc. Payment'),
 ]
 
@@ -295,12 +296,15 @@ class ElksDuesPayment(models.Model):
             return
 
         # --- Determine member type & bundle flag ---
+        is_prorated = self.payment_type == 'prorated'
+
         if self.payment_type == 'one_year_life':
             member_type = 'life'
             bundle_field = 'include_in_one_year'
             months = 12
-        elif self.payment_type == 'one_year':
-            member_type = 'regular'
+        elif self.payment_type in ('one_year', 'prorated'):
+            # Pro-rated uses the same one-year bundle, then scales amounts
+            member_type = self._get_member_type()
             bundle_field = 'include_in_one_year'
             months = 12
         else:  # six_months
@@ -354,6 +358,25 @@ class ElksDuesPayment(models.Model):
 
         self.line_ids = [(5, 0, 0)] + lines  # clear then add
 
+        # Pro-rate amounts if this is a prorated payment
+        if is_prorated and self.payment_date:
+            month = self.payment_date.month
+            if month >= 4:
+                months_remaining = 16 - month
+            else:
+                months_remaining = 4 - month
+            if months_remaining <= 0:
+                months_remaining = 12
+            for line in self.line_ids:
+                if line.default_amount:
+                    line.amount_paid = round(
+                        line.default_amount * months_remaining / 12, 2,
+                    )
+            self.note = (
+                f"Pro-rated initiation payment: "
+                f"{months_remaining} of 12 months remaining in lodge year."
+            )
+
         # Set primary rate (first dues line found)
         dues_rate = rates.filtered('is_dues')[:1]
         if dues_rate:
@@ -380,6 +403,43 @@ class ElksDuesPayment(models.Model):
             return 'life'
 
         return 'regular'
+
+    # -----------------------------------------------------------------
+    # Recalculate pro-rated amounts when transaction date changes
+    # -----------------------------------------------------------------
+    @api.onchange("payment_date")
+    def _onchange_payment_date_prorate(self):
+        """Recalculate pro-rated line amounts when the date changes.
+
+        Only fires for Custom payments that are linked to a membership
+        application (i.e. initiation/reinstatement payments).  Regular
+        one-year or six-month payments are not affected.
+        """
+        if self.payment_type not in ('custom', 'prorated'):
+            return
+        if self.payment_type == 'custom' and not self.application_id:
+            return
+        if not self.payment_date or not self.line_ids:
+            return
+
+        month = self.payment_date.month
+        if month >= 4:
+            months_remaining = 16 - month
+        else:
+            months_remaining = 4 - month
+        if months_remaining <= 0:
+            months_remaining = 12
+
+        for line in self.line_ids:
+            if line.default_amount:
+                line.amount_paid = round(
+                    line.default_amount * months_remaining / 12, 2,
+                )
+
+        self.note = (
+            f"Pro-rated initiation payment: "
+            f"{months_remaining} of 12 months remaining in lodge year."
+        )
 
     # -----------------------------------------------------------------
     # Account lookup helper
@@ -452,6 +512,92 @@ class ElksDuesPayment(models.Model):
         return Account.search([
             ('account_type', '=', 'expense'),
         ], limit=1)
+
+    # -----------------------------------------------------------------
+    # Pro-rated initiation / reinstatement payment
+    # -----------------------------------------------------------------
+    @api.model
+    def create_prorated_initiation_payment(self, partner, application=None):
+        """Create a draft pro-rated dues payment for initiation / reinstatement.
+
+        Uses the same rate-lookup logic as the UI onchange by creating a
+        virtual record with ``payment_type='prorated'`` and manually
+        triggering the onchanges.  This guarantees the lines populated
+        here match exactly what the Secretary would see if they chose
+        "Pro-Rated Dues Payment" from the dropdown.
+
+        Args:
+            partner: res.partner record of the member being initiated.
+            application: optional elks.membership.application record.
+
+        Returns:
+            The newly created elks.dues.payment record (draft state).
+        """
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        # Use the application's initiation date if available
+        ref_date = fields.Date.context_today(self)
+        if application and hasattr(application, 'date_initiated') and application.date_initiated:
+            ref_date = application.date_initiated
+
+        # Build a virtual record and trigger the onchanges that
+        # populate lines (the same code path the UI uses).
+        tmp = self.new({
+            'partner_id': partner.id,
+            'payment_type': 'prorated',
+            'payment_date': ref_date,
+        })
+        tmp._onchange_partner_id_payment_type()
+        tmp._onchange_payment_type()
+
+        _logger.info(
+            "Pro-rated payment: partner=%s, ref_date=%s, "
+            "onchange populated %d lines",
+            partner.id, ref_date, len(tmp.line_ids),
+        )
+
+        if not tmp.line_ids:
+            _logger.warning(
+                "No lines generated for pro-rated initiation payment "
+                "(partner=%s). Check that dues rates have "
+                "include_in_one_year=True.", partner.id,
+            )
+            return self.browse()
+
+        # Extract line data from the virtual record into create-tuples
+        lines = []
+        for line in tmp.line_ids:
+            lines.append((0, 0, {
+                'sequence': line.sequence,
+                'rate_id': line.rate_id.id,
+                'description': line.description,
+                'default_amount': line.default_amount,
+                'amount_paid': line.amount_paid,
+                'lodge_assisted': line.lodge_assisted,
+            }))
+
+        payment_vals = {
+            'partner_id': partner.id,
+            'payment_type': 'prorated',
+            'payment_date': ref_date,
+            'rate_id': tmp.rate_id.id if tmp.rate_id else False,
+            'line_ids': lines,
+            'note': tmp.note or '',
+        }
+        if application:
+            payment_vals['application_id'] = application.id
+
+        payment = self.create(payment_vals)
+
+        _logger.info(
+            "Created pro-rated dues payment %s for partner %s "
+            "(%d lines, $%.2f total)",
+            payment.id, partner.id,
+            len(payment.line_ids), payment.amount_total,
+        )
+
+        return payment
 
     # -----------------------------------------------------------------
     # Post payment
