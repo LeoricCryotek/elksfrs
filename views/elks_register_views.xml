@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== Register / Till — List View ===== -->
+    <record id="view_elks_register_tree" model="ir.ui.view">
+        <field name="name">elks.register.tree</field>
+        <field name="model">elks.register</field>
+        <field name="arch" type="xml">
+            <list string="Registers / Tills" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="location"/>
+                <field name="starter_total"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===== Register / Till — Form View ===== -->
+    <record id="view_elks_register_form" model="ir.ui.view">
+        <field name="name">elks.register.form</field>
+        <field name="model">elks.register</field>
+        <field name="arch" type="xml">
+            <form string="Register / Till">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Main Bar"/></h1>
+                    </div>
+                    <group>
+                        <group string="Register Info">
+                            <field name="location"
+                                   placeholder="e.g. Back bar, south side"/>
+                            <field name="active"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Starter Bank Total">
+                            <field name="starter_total" class="fw-bold fs-4"/>
+                        </group>
+                    </group>
+
+                    <separator string="Default Starter Bank — Denomination Quantities"/>
+                    <p class="text-muted">
+                        How many of each denomination this register starts with.
+                        These values are copied onto each count as a snapshot.
+                    </p>
+                    <group>
+                        <group string="Coins">
+                            <field name="starter_pennies"/>
+                            <field name="starter_nickels"/>
+                            <field name="starter_dimes"/>
+                            <field name="starter_quarters"/>
+                            <field name="starter_half_dollars"/>
+                            <field name="starter_dollar_coins"/>
+                        </group>
+                        <group string="Bills">
+                            <field name="starter_ones"/>
+                            <field name="starter_twos"/>
+                            <field name="starter_fives"/>
+                            <field name="starter_tens"/>
+                            <field name="starter_twenties"/>
+                            <field name="starter_fifties"/>
+                            <field name="starter_hundreds"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===== Register / Till — Search View ===== -->
+    <record id="view_elks_register_search" model="ir.ui.view">
+        <field name="name">elks.register.search</field>
+        <field name="model">elks.register</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="location"/>
+                <filter name="active" string="Active"
+                        domain="[('active', '=', True)]"/>
+                <filter name="archived" string="Archived"
+                        domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===== Action ===== -->
+    <record id="action_elks_register" model="ir.actions.act_window">
+        <field name="name">Registers / Tills</field>
+        <field name="res_model">elks.register</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_register_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Define your registers and tills
+            </p>
+            <p>
+                Set up each register with a name, location, and default
+                starter-bank denomination quantities.
+            </p>
+        </field>
+    </record>
+
+</odoo>

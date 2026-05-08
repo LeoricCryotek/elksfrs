@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Pay Dues button on the CLMS tab (defined here so the method is available) -->
+    <!-- Pay Dues smart button in the button box -->
     <record id="view_partner_form_elks_pay_dues" model="ir.ui.view">
         <field name="name">res.partner.form.elks.pay.dues</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="elkscontacts.view_partner_form_elks"/>
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='clms_tab']/group[1]" position="before">
-                <div class="mb-3">
-                    <button name="action_pay_dues"
-                            string="Pay Dues"
-                            type="object"
-                            class="btn-primary"
-                            icon="fa-money"
-                            invisible="not x_is_member"/>
-                </div>
+            <xpath expr="//form/sheet/div[hasclass('oe_button_box')]" position="inside">
+                <button name="action_pay_dues"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-money"
+                        invisible="not x_is_member">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="x_dues_payment_count" nolabel="1"/>
+                        </span>
+                        <span class="o_stat_text">Pay Dues</span>
+                    </div>
+                </button>
             </xpath>
         </field>
     </record>

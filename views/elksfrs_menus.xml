@@ -28,21 +28,21 @@
 
     <menuitem id="menu_elksfrs_dues_deposits"
               name="Daily Batches"
-              parent="menu_elksfrs_dues"
+              parent="menu_elksfrs_accounting"
               action="action_elks_dues_deposit"
-              sequence="15"/>
+              sequence="25"/>
 
     <menuitem id="menu_elksfrs_bank_deposits"
               name="Bank Deposits"
-              parent="menu_elksfrs_dues"
+              parent="menu_elksfrs_accounting"
               action="action_elks_bank_deposit"
-              sequence="16"/>
+              sequence="26"/>
 
     <menuitem id="menu_elksfrs_cash_on_hand"
               name="Cash On Hand"
-              parent="menu_elksfrs_dues"
+              parent="menu_elksfrs_accounting"
               action="action_elks_cash_on_hand"
-              sequence="17"/>
+              sequence="27"/>
 
     <menuitem id="menu_elksfrs_process_paid"
               name="Process Paid Members"
@@ -172,6 +172,12 @@
               parent="menu_elksfrs_config"
               action="action_elks_department"
               sequence="20"/>
+
+    <menuitem id="menu_elksfrs_registers"
+              name="Registers / Tills"
+              parent="menu_elksfrs_config"
+              action="action_elks_register"
+              sequence="25"/>
 
     <menuitem id="menu_elksfrs_settings"
               name="Lodge Settings"

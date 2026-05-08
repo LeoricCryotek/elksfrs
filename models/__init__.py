@@ -9,3 +9,9 @@ from . import elks_lodge_settings
 from . import elks_dues_rate
 from . import elks_dues_deposit
 from . import res_partner_frs
+from . import elks_cash_denomination
+from . import elks_cash_par_levels
+from . import elks_register
+from . import elks_register_count_line
+from . import elks_register_transfer
+from . import elks_cash_register_ext

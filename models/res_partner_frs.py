@@ -40,6 +40,10 @@ class ResPartnerFRS(models.Model):
         'elks.dues.payment', 'partner_id',
         string='Dues Payments',
     )
+    x_dues_payment_count = fields.Integer(
+        compute='_compute_dues_payment_count',
+        string='Dues Payments',
+    )
     x_dues_budget_year = fields.Char(
         "Dues Counted for Budget Year",
         index=True,
@@ -47,6 +51,11 @@ class ResPartnerFRS(models.Model):
              "have already been counted toward the budget income actual. "
              "Prevents double-counting.",
     )
+
+    @api.depends('x_dues_payment_ids')
+    def _compute_dues_payment_count(self):
+        for partner in self:
+            partner.x_dues_payment_count = len(partner.x_dues_payment_ids)
 
     # Fields that signal a possible dues status change
     _DUES_TRIGGER_FIELDS = {

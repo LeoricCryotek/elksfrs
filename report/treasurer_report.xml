@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===== Paper Format ===== -->
+    <record id="paperformat_treasurer_report" model="report.paperformat">
+        <field name="name">Treasurer Cash Report</field>
+        <field name="format">Letter</field>
+        <field name="margin_top">15</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="orientation">Portrait</field>
+        <field name="header_spacing">5</field>
+    </record>
+
+    <!-- ===== Report Action ===== -->
+    <record id="action_report_treasurer_cash" model="ir.actions.report">
+        <field name="name">Treasurer Cash Report</field>
+        <field name="model">elks.cash.on.hand</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.report_treasurer_cash</field>
+        <field name="report_file">elksfrs.report_treasurer_cash</field>
+        <field name="paperformat_id" ref="paperformat_treasurer_report"/>
+        <field name="binding_model_id" ref="model_elks_cash_on_hand"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- ===== QWeb Template ===== -->
+    <template id="report_treasurer_cash">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-family: Arial, sans-serif;">
+
+                        <!-- HEADER -->
+                        <div class="text-center mb-3">
+                            <h2>Treasurer Cash Report</h2>
+                            <p class="text-muted mb-0">
+                                Count Date: <strong t-field="o.count_date"/>
+                                &amp;nbsp;|&amp;nbsp;
+                                <span t-field="o.count_type"/>
+                                &amp;nbsp;|&amp;nbsp;
+                                Ref: <span t-field="o.name"/>
+                            </p>
+                            <p class="text-muted">
+                                Counted by: <span t-field="o.counted_by"/>
+                                <t t-if="o.witnessed_by">
+                                    &amp;nbsp;|&amp;nbsp;
+                                    Witnessed by: <span t-field="o.witnessed_by"/>
+                                </t>
+                            </p>
+                        </div>
+
+                        <!-- SECTION 1: Per-Register Count Summary -->
+                        <h4 class="border-bottom pb-1">1. Register Counts</h4>
+                        <table class="table table-sm table-bordered mb-3">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Register</th>
+                                    <th class="text-end">Counted</th>
+                                    <th class="text-end">Starter Bank</th>
+                                    <th class="text-end">Excess / (Short)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o.register_line_ids" t-as="line">
+                                    <tr>
+                                        <td t-field="line.register_id"/>
+                                        <td class="text-end"
+                                            t-field="line.counted_total"
+                                            t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        <td class="text-end"
+                                            t-field="line.starter_total"
+                                            t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        <td class="text-end">
+                                            <span t-att-class="'text-success' if line.excess_total &gt;= 0 else 'text-danger'"
+                                                  t-field="line.excess_total"
+                                                  t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot class="fw-bold">
+                                <tr>
+                                    <td>TOTALS</td>
+                                    <td class="text-end"
+                                        t-field="o.counted_total"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    <td class="text-end"
+                                        t-field="o.total_starter_banks"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    <td class="text-end"
+                                        t-field="o.total_excess"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <!-- SECTION 2: Transfers (if any) -->
+                        <t t-if="o.transfer_ids">
+                            <h4 class="border-bottom pb-1">2. Register Transfers</h4>
+                            <table class="table table-sm table-bordered mb-3">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.transfer_ids" t-as="xfer">
+                                        <tr>
+                                            <td t-field="xfer.from_register_id"/>
+                                            <td t-field="xfer.to_register_id"/>
+                                            <td class="text-end"
+                                                t-field="xfer.transfer_total"
+                                                t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <!-- SECTION 3: Deposit Breakdown -->
+                        <h4 class="border-bottom pb-1">
+                            <t t-if="o.transfer_ids">3</t>
+                            <t t-else="">2</t>. Deposit to Bank
+                        </h4>
+                        <t t-if="o.deposit_total_denom &gt; 0">
+                            <table class="table table-sm table-bordered mb-3"
+                                   style="max-width: 400px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Denomination</th>
+                                        <th class="text-end">Qty</th>
+                                        <th class="text-end">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="denom_data" t-value="[
+                                        ('Pennies', o.deposit_pennies, 0.01),
+                                        ('Nickels', o.deposit_nickels, 0.05),
+                                        ('Dimes', o.deposit_dimes, 0.10),
+                                        ('Quarters', o.deposit_quarters, 0.25),
+                                        ('Half Dollars', o.deposit_half_dollars, 0.50),
+                                        ('Dollar Coins', o.deposit_dollar_coins, 1.00),
+                                        ('$1 Bills', o.deposit_ones, 1),
+                                        ('$2 Bills', o.deposit_twos, 2),
+                                        ('$5 Bills', o.deposit_fives, 5),
+                                        ('$10 Bills', o.deposit_tens, 10),
+                                        ('$20 Bills', o.deposit_twenties, 20),
+                                        ('$50 Bills', o.deposit_fifties, 50),
+                                        ('$100 Bills', o.deposit_hundreds, 100),
+                                    ]"/>
+                                    <t t-foreach="denom_data" t-as="dd">
+                                        <tr t-if="dd[1] &gt; 0">
+                                            <td><t t-esc="dd[0]"/></td>
+                                            <td class="text-end"><t t-esc="dd[1]"/></td>
+                                            <td class="text-end">
+                                                $<t t-esc="'%.2f' % (dd[1] * dd[2])"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                                <tfoot class="fw-bold table-success">
+                                    <tr>
+                                        <td colspan="2">TOTAL DEPOSIT</td>
+                                        <td class="text-end"
+                                            t-field="o.deposit_total_denom"
+                                            t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted">No deposit required — $0.00</p>
+                        </t>
+
+                        <!-- SECTION 4: Change Order -->
+                        <h4 class="border-bottom pb-1">
+                            <t t-if="o.transfer_ids">4</t>
+                            <t t-else="">3</t>. Change Order Request
+                        </h4>
+                        <t t-if="o.change_total_denom &gt; 0">
+                            <table class="table table-sm table-bordered mb-3"
+                                   style="max-width: 400px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Denomination</th>
+                                        <th class="text-end">Qty Needed</th>
+                                        <th class="text-end">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="change_data" t-value="[
+                                        ('Pennies', o.change_pennies, 0.01),
+                                        ('Nickels', o.change_nickels, 0.05),
+                                        ('Dimes', o.change_dimes, 0.10),
+                                        ('Quarters', o.change_quarters, 0.25),
+                                        ('Half Dollars', o.change_half_dollars, 0.50),
+                                        ('Dollar Coins', o.change_dollar_coins, 1.00),
+                                        ('$1 Bills', o.change_ones, 1),
+                                        ('$2 Bills', o.change_twos, 2),
+                                        ('$5 Bills', o.change_fives, 5),
+                                        ('$10 Bills', o.change_tens, 10),
+                                        ('$20 Bills', o.change_twenties, 20),
+                                        ('$50 Bills', o.change_fifties, 50),
+                                        ('$100 Bills', o.change_hundreds, 100),
+                                    ]"/>
+                                    <t t-foreach="change_data" t-as="cd">
+                                        <tr t-if="cd[1] &gt; 0">
+                                            <td><t t-esc="cd[0]"/></td>
+                                            <td class="text-end"><t t-esc="cd[1]"/></td>
+                                            <td class="text-end">
+                                                $<t t-esc="'%.2f' % (cd[1] * cd[2])"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                                <tfoot class="fw-bold table-danger">
+                                    <tr>
+                                        <td colspan="2">CHANGE ORDER TOTAL</td>
+                                        <td class="text-end"
+                                            t-field="o.change_total_denom"
+                                            t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </t>
+                        <t t-else="">
+                            <p class="text-muted">No change order needed — $0.00</p>
+                        </t>
+
+                        <!-- SECTION 5: Treasurer Handoff Summary -->
+                        <div class="border border-dark p-3 mt-4"
+                             style="background: #f8f9fa;">
+                            <h4 class="mb-2">Treasurer Handoff</h4>
+                            <table class="table table-borderless mb-0"
+                                   style="max-width: 450px;">
+                                <tr class="fs-5">
+                                    <td>Cash being handed for deposit:</td>
+                                    <td class="text-end fw-bold text-success"
+                                        t-field="o.deposit_total_denom"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                </tr>
+                                <tr class="fs-5">
+                                    <td>Change order to request from bank:</td>
+                                    <td class="text-end fw-bold"
+                                        t-att-class="'text-danger' if o.change_total_denom &gt; 0 else 'text-muted'">
+                                        <t t-if="o.change_total_denom &gt; 0">
+                                            <span t-field="o.change_total_denom"
+                                                  t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </t>
+                                        <t t-else="">$0.00</t>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div class="row mt-5">
+                            <div class="col-5">
+                                <div class="border-top border-dark pt-1">
+                                    Prepared by (signature / date)
+                                </div>
+                            </div>
+                            <div class="col-2"/>
+                            <div class="col-5">
+                                <div class="border-top border-dark pt-1">
+                                    Treasurer (signature / date)
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

@@ -313,7 +313,9 @@
                 <field name="count_date"/>
                 <field name="count_type"/>
                 <field name="expected_cash"/>
-                <field name="counted_total"/>
+                <field name="total_coins" optional="show"/>
+                <field name="total_bills" optional="show"/>
+                <field name="counted_total" sum="Total"/>
                 <field name="variance"
                        decoration-danger="has_variance"/>
                 <field name="counted_by"/>
@@ -369,12 +371,234 @@
                         </group>
                     </group>
 
-                    <group string="Physical Count"
+                    <!-- ========== COIN COUNTS ========== -->
+                    <group string="Coins"
                            readonly="state != 'draft'">
                         <group>
-                            <field name="counted_cash"/>
-                            <field name="counted_checks"/>
-                            <field name="counted_other"/>
+                            <label for="qty_pennies"/>
+                            <div class="o_row">
+                                <field name="qty_pennies" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $0.01  =</span>
+                                <field name="sub_pennies" class="oe_inline"/>
+                            </div>
+                            <label for="qty_nickels"/>
+                            <div class="o_row">
+                                <field name="qty_nickels" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $0.05  =</span>
+                                <field name="sub_nickels" class="oe_inline"/>
+                            </div>
+                            <label for="qty_dimes"/>
+                            <div class="o_row">
+                                <field name="qty_dimes" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $0.10  =</span>
+                                <field name="sub_dimes" class="oe_inline"/>
+                            </div>
+                        </group>
+                        <group>
+                            <label for="qty_quarters"/>
+                            <div class="o_row">
+                                <field name="qty_quarters" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $0.25  =</span>
+                                <field name="sub_quarters" class="oe_inline"/>
+                            </div>
+                            <label for="qty_half_dollars"/>
+                            <div class="o_row">
+                                <field name="qty_half_dollars" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $0.50  =</span>
+                                <field name="sub_half_dollars" class="oe_inline"/>
+                            </div>
+                            <label for="qty_dollar_coins"/>
+                            <div class="o_row">
+                                <field name="qty_dollar_coins" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $1.00  =</span>
+                                <field name="sub_dollar_coins" class="oe_inline"/>
+                            </div>
+                        </group>
+                    </group>
+                    <group>
+                        <group/>
+                        <group>
+                            <field name="total_coins"
+                                   class="fw-bold"/>
+                        </group>
+                    </group>
+
+                    <!-- ========== BILL COUNTS ========== -->
+                    <group string="Bills"
+                           readonly="state != 'draft'">
+                        <group>
+                            <label for="qty_ones"/>
+                            <div class="o_row">
+                                <field name="qty_ones" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $1  =</span>
+                                <field name="sub_ones" class="oe_inline"/>
+                            </div>
+                            <label for="qty_twos"/>
+                            <div class="o_row">
+                                <field name="qty_twos" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $2  =</span>
+                                <field name="sub_twos" class="oe_inline"/>
+                            </div>
+                            <label for="qty_fives"/>
+                            <div class="o_row">
+                                <field name="qty_fives" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $5  =</span>
+                                <field name="sub_fives" class="oe_inline"/>
+                            </div>
+                            <label for="qty_tens"/>
+                            <div class="o_row">
+                                <field name="qty_tens" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $10  =</span>
+                                <field name="sub_tens" class="oe_inline"/>
+                            </div>
+                        </group>
+                        <group>
+                            <label for="qty_twenties"/>
+                            <div class="o_row">
+                                <field name="qty_twenties" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $20  =</span>
+                                <field name="sub_twenties" class="oe_inline"/>
+                            </div>
+                            <label for="qty_fifties"/>
+                            <div class="o_row">
+                                <field name="qty_fifties" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $50  =</span>
+                                <field name="sub_fifties" class="oe_inline"/>
+                            </div>
+                            <label for="qty_hundreds"/>
+                            <div class="o_row">
+                                <field name="qty_hundreds" class="oe_inline"/>
+                                <span class="text-muted ms-2">×  $100  =</span>
+                                <field name="sub_hundreds" class="oe_inline"/>
+                            </div>
+                        </group>
+                    </group>
+                    <group>
+                        <group/>
+                        <group>
+                            <field name="total_bills"
+                                   class="fw-bold"/>
+                        </group>
+                    </group>
+
+                    <!-- ========== GRAND TOTAL ========== -->
+                    <group>
+                        <group/>
+                        <group>
+                            <field name="total_denomination"
+                                   class="fw-bold fs-4"/>
+                        </group>
+                    </group>
+
+                    <!-- ========== DEPOSIT / CHANGE ORDER ANALYSIS ========== -->
+                    <separator string="Deposit &amp; Change Order Analysis"/>
+                    <group>
+                        <group string="Coins — Over / Under Par">
+                            <label for="over_pennies"/>
+                            <div class="o_row">
+                                <field name="over_pennies" class="oe_inline"
+                                       decoration-success="over_pennies &gt; 0"
+                                       decoration-danger="over_pennies &lt; 0"/>
+                                <span class="text-muted ms-1">pennies</span>
+                            </div>
+                            <label for="over_nickels"/>
+                            <div class="o_row">
+                                <field name="over_nickels" class="oe_inline"
+                                       decoration-success="over_nickels &gt; 0"
+                                       decoration-danger="over_nickels &lt; 0"/>
+                                <span class="text-muted ms-1">nickels</span>
+                            </div>
+                            <label for="over_dimes"/>
+                            <div class="o_row">
+                                <field name="over_dimes" class="oe_inline"
+                                       decoration-success="over_dimes &gt; 0"
+                                       decoration-danger="over_dimes &lt; 0"/>
+                                <span class="text-muted ms-1">dimes</span>
+                            </div>
+                            <label for="over_quarters"/>
+                            <div class="o_row">
+                                <field name="over_quarters" class="oe_inline"
+                                       decoration-success="over_quarters &gt; 0"
+                                       decoration-danger="over_quarters &lt; 0"/>
+                                <span class="text-muted ms-1">quarters</span>
+                            </div>
+                            <label for="over_half_dollars"/>
+                            <div class="o_row">
+                                <field name="over_half_dollars" class="oe_inline"
+                                       decoration-success="over_half_dollars &gt; 0"
+                                       decoration-danger="over_half_dollars &lt; 0"/>
+                                <span class="text-muted ms-1">half dollars</span>
+                            </div>
+                            <label for="over_dollar_coins"/>
+                            <div class="o_row">
+                                <field name="over_dollar_coins" class="oe_inline"
+                                       decoration-success="over_dollar_coins &gt; 0"
+                                       decoration-danger="over_dollar_coins &lt; 0"/>
+                                <span class="text-muted ms-1">dollar coins</span>
+                            </div>
+                        </group>
+                        <group string="Bills — Over / Under Par">
+                            <label for="over_ones"/>
+                            <div class="o_row">
+                                <field name="over_ones" class="oe_inline"
+                                       decoration-success="over_ones &gt; 0"
+                                       decoration-danger="over_ones &lt; 0"/>
+                                <span class="text-muted ms-1">$1 bills</span>
+                            </div>
+                            <label for="over_twos"/>
+                            <div class="o_row">
+                                <field name="over_twos" class="oe_inline"
+                                       decoration-success="over_twos &gt; 0"
+                                       decoration-danger="over_twos &lt; 0"/>
+                                <span class="text-muted ms-1">$2 bills</span>
+                            </div>
+                            <label for="over_fives"/>
+                            <div class="o_row">
+                                <field name="over_fives" class="oe_inline"
+                                       decoration-success="over_fives &gt; 0"
+                                       decoration-danger="over_fives &lt; 0"/>
+                                <span class="text-muted ms-1">$5 bills</span>
+                            </div>
+                            <label for="over_tens"/>
+                            <div class="o_row">
+                                <field name="over_tens" class="oe_inline"
+                                       decoration-success="over_tens &gt; 0"
+                                       decoration-danger="over_tens &lt; 0"/>
+                                <span class="text-muted ms-1">$10 bills</span>
+                            </div>
+                            <label for="over_twenties"/>
+                            <div class="o_row">
+                                <field name="over_twenties" class="oe_inline"
+                                       decoration-success="over_twenties &gt; 0"
+                                       decoration-danger="over_twenties &lt; 0"/>
+                                <span class="text-muted ms-1">$20 bills</span>
+                            </div>
+                            <label for="over_fifties"/>
+                            <div class="o_row">
+                                <field name="over_fifties" class="oe_inline"
+                                       decoration-success="over_fifties &gt; 0"
+                                       decoration-danger="over_fifties &lt; 0"/>
+                                <span class="text-muted ms-1">$50 bills</span>
+                            </div>
+                            <label for="over_hundreds"/>
+                            <div class="o_row">
+                                <field name="over_hundreds" class="oe_inline"
+                                       decoration-success="over_hundreds &gt; 0"
+                                       decoration-danger="over_hundreds &lt; 0"/>
+                                <span class="text-muted ms-1">$100 bills</span>
+                            </div>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="total_to_deposit"
+                                   class="fw-bold text-success fs-5"
+                                   string="Total to Deposit"/>
+                        </group>
+                        <group>
+                            <field name="total_change_order"
+                                   class="fw-bold text-danger fs-5"
+                                   string="Change Order Needed"/>
                         </group>
                     </group>
 

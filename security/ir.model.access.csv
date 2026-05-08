@@ -18,9 +18,9 @@ access_elks_lodge_settings_manager,elks.lodge.settings.manager,model_elks_lodge_
 access_frs_export_wizard_manager,frs.export.wizard.manager,model_frs_export_wizard,group_elksfrs_manager,1,1,1,1
 access_elks_dues_rate_user,elks.dues.rate.user,model_elks_dues_rate,group_elksfrs_user,1,0,0,0
 access_elks_dues_rate_manager,elks.dues.rate.manager,model_elks_dues_rate,group_elksfrs_manager,1,1,1,1
-access_elks_dues_payment_user,elks.dues.payment.user,model_elks_dues_payment,group_elksfrs_user,1,0,0,0
+access_elks_dues_payment_all,elks.dues.payment.all,model_elks_dues_payment,base.group_user,1,0,0,0
 access_elks_dues_payment_manager,elks.dues.payment.manager,model_elks_dues_payment,group_elksfrs_manager,1,1,1,1
-access_elks_dues_payment_line_user,elks.dues.payment.line.user,model_elks_dues_payment_line,group_elksfrs_user,1,0,0,0
+access_elks_dues_payment_line_all,elks.dues.payment.line.all,model_elks_dues_payment_line,base.group_user,1,0,0,0
 access_elks_dues_payment_line_manager,elks.dues.payment.line.manager,model_elks_dues_payment_line,group_elksfrs_manager,1,1,1,1
 access_elks_dues_deposit_user,elks.dues.deposit.user,model_elks_dues_deposit,group_elksfrs_user,1,0,0,0
 access_elks_dues_deposit_manager,elks.dues.deposit.manager,model_elks_dues_deposit,group_elksfrs_manager,1,1,1,1
@@ -40,3 +40,9 @@ access_elks_budget_amendment_line_manager,elks.budget.amendment.line.manager,mod
 access_process_paid_members_wizard_manager,process.paid.members.wizard.manager,model_process_paid_members_wizard,group_elksfrs_manager,1,1,1,1
 access_qb_pnl_reconcile_wizard_manager,qb.pnl.reconcile.wizard.manager,model_qb_pnl_reconcile_wizard,group_elksfrs_manager,1,1,1,1
 access_clms_payment_import_wizard_manager,clms.payment.import.wizard.manager,model_clms_payment_import_wizard,group_elksfrs_manager,1,1,1,1
+access_elks_register_user,elks.register.user,model_elks_register,group_elksfrs_user,1,0,0,0
+access_elks_register_manager,elks.register.manager,model_elks_register,group_elksfrs_manager,1,1,1,1
+access_elks_register_count_line_user,elks.register.count.line.user,model_elks_register_count_line,group_elksfrs_user,1,0,0,0
+access_elks_register_count_line_manager,elks.register.count.line.manager,model_elks_register_count_line,group_elksfrs_manager,1,1,1,1
+access_elks_register_transfer_user,elks.register.transfer.user,model_elks_register_transfer,group_elksfrs_user,1,0,0,0
+access_elks_register_transfer_manager,elks.register.transfer.manager,model_elks_register_transfer,group_elksfrs_manager,1,1,1,1

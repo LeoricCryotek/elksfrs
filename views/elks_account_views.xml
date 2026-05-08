@@ -180,6 +180,33 @@
                     <group string="FRS Submission">
                         <field name="frs_email"/>
                     </group>
+
+                    <!-- ===== Cash On Hand Par Levels ===== -->
+                    <separator string="Cash On Hand — Par Levels (Bank on Hand)"/>
+                    <p class="text-muted">
+                        Target quantities to keep on hand per denomination.
+                        Anything over par is flagged for deposit; under par
+                        triggers a change-order request.
+                    </p>
+                    <group>
+                        <group string="Coin Par Levels">
+                            <field name="par_pennies"/>
+                            <field name="par_nickels"/>
+                            <field name="par_dimes"/>
+                            <field name="par_quarters"/>
+                            <field name="par_half_dollars"/>
+                            <field name="par_dollar_coins"/>
+                        </group>
+                        <group string="Bill Par Levels">
+                            <field name="par_ones"/>
+                            <field name="par_twos"/>
+                            <field name="par_fives"/>
+                            <field name="par_tens"/>
+                            <field name="par_twenties"/>
+                            <field name="par_fifties"/>
+                            <field name="par_hundreds"/>
+                        </group>
+                    </group>
                 </sheet>
             </form>
         </field>
