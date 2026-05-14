@@ -20,8 +20,8 @@
                         icon="fa-print"/>
             </xpath>
 
-            <!-- Add register summary fields after Count Details group -->
-            <xpath expr="//group[@string='Expected vs. Counted']" position="before">
+            <!-- Add register summary fields before the Expected vs Counted group -->
+            <xpath expr="//field[@name='expected_cash']/.." position="before">
                 <group string="Register Summary">
                     <field name="register_count"/>
                     <field name="total_starter_banks"/>

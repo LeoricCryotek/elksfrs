@@ -129,13 +129,28 @@
                             invisible="state != 'draft'"/>
                     <button name="action_draft" type="object" string="Reset to Draft"
                             invisible="state not in ('posted', 'cancelled')"/>
+                    <!--
+                        CLMS state-change buttons are Secretary-only.
+
+                        groups=elkscontacts.group_elks_secretary hides them
+                        from Reception/Officer users so they cannot
+                        accidentally mark a payment as processed (which
+                        would tell the Secretary "you don't need to push
+                        this to CLMS" — leading to renewal notices being
+                        sent for already-paid dues).
+
+                        Python-level guard in elks_dues_rate.py also
+                        enforces this for RPC/API callers (defense in depth).
+                    -->
                     <button name="action_mark_clms_processed" type="object"
                             string="Mark as Processed in CLMS"
                             class="btn-secondary"
+                            groups="elkscontacts.group_elks_secretary"
                             invisible="state != 'posted' or clms_status == 'processed'"/>
                     <button name="action_mark_clms_pending" type="object"
                             string="Unmark CLMS Processed"
                             class="btn-link"
+                            groups="elkscontacts.group_elks_secretary"
                             invisible="clms_status != 'processed'"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,posted"/>

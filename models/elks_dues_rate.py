@@ -10,7 +10,7 @@ so each component of a payment (dues, per capita, insurance,
 magazine, state fees, charitable contributions) is tracked separately.
 """
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 
 TRAN_TYPES = [
@@ -922,7 +922,29 @@ class ElksDuesPayment(models.Model):
                 subtype_xmlid='mail.mt_note',
             )
 
+    def _check_secretary_group(self):
+        """Guard for CLMS state-change actions.
+
+        Only members of `elkscontacts.group_elks_secretary` may mark a
+        payment as Processed in CLMS or reverse that flag. Reception/
+        Officer users posting dues payments must NOT have this group —
+        accidentally marking a payment as processed would cause the
+        Secretary to skip pushing it into CLMS at Grand Lodge, and the
+        member would keep getting renewal notices.
+
+        The button is hidden in the UI via groups= in the view; this
+        Python check enforces the same constraint for RPC/API callers
+        (defense in depth).
+        """
+        if not self.env.user.has_group('elkscontacts.group_elks_secretary'):
+            raise AccessError(_(
+                "Only the Lodge Secretary can change a payment's CLMS "
+                "status. Ask the Secretary to mark this payment as "
+                "Processed in CLMS after they enter it at Grand Lodge."
+            ))
+
     def action_mark_clms_processed(self):
+        self._check_secretary_group()
         for rec in self:
             rec.write({
                 'clms_status': 'processed',
@@ -940,6 +962,7 @@ class ElksDuesPayment(models.Model):
             )
 
     def action_mark_clms_pending(self):
+        self._check_secretary_group()
         for rec in self:
             rec.write({
                 'clms_status': 'pending',
