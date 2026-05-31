@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- Compact Meeting Cash Count Slip                        -->
+    <!--                                                        -->
+    <!-- A 2" x 4" portrait slip with just a total — no         -->
+    <!-- denomination breakdown.  Intended for counting the     -->
+    <!-- collection at meetings where a single total is what    -->
+    <!-- the secretary records.                                 -->
+    <!--                                                        -->
+    <!-- The detailed Cash Count Slip (denom breakdown) is      -->
+    <!-- still available as a separate Print action for         -->
+    <!-- weekly bank counts, audits, etc.                       -->
+    <!-- ===================================================== -->
+
+    <!-- Paperformat: 2" wide x 4" tall portrait, tight margins -->
+    <!-- All Odoo paperformat dimensions are in millimeters     -->
+    <!-- 2in = 50.8mm, 4in = 101.6mm, 0.1in margin = 2.5mm      -->
+    <record id="paperformat_meeting_slip_2x4" model="report.paperformat">
+        <field name="name">Meeting Slip 2x4</field>
+        <field name="format">custom</field>
+        <field name="page_width">51</field>
+        <field name="page_height">102</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">3</field>
+        <field name="margin_bottom">3</field>
+        <field name="margin_left">3</field>
+        <field name="margin_right">3</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <!-- QWeb template — minimal, no external_layout so the          -->
+    <!-- standard lodge header/footer don't eat our 2x4 real estate -->
+    <template id="cash_count_meeting_slip_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div class="page" style="margin:0; padding:0;">
+                    <style>
+                        .mcs {
+                            font-family: 'Helvetica Neue', Arial, sans-serif;
+                            color: #000;
+                            width: 100%;
+                            box-sizing: border-box;
+                        }
+                        .mcs .title {
+                            font-size: 11pt;
+                            font-weight: bold;
+                            text-align: center;
+                            border-bottom: 1.5px solid #000;
+                            padding-bottom: 2px;
+                            margin-bottom: 3px;
+                            letter-spacing: 0.5px;
+                        }
+                        .mcs .meta {
+                            font-size: 8pt;
+                            line-height: 1.25;
+                            margin-bottom: 4px;
+                        }
+                        .mcs .meta .row { display: flex; justify-content: space-between; }
+                        .mcs .meta .lbl { color: #444; }
+                        .mcs .total-box {
+                            border: 2px solid #000;
+                            padding: 6px 6px;
+                            margin: 6px 0;
+                            text-align: center;
+                        }
+                        .mcs .total-box .lbl {
+                            font-size: 8pt;
+                            letter-spacing: 1px;
+                            color: #333;
+                        }
+                        .mcs .total-box .amt {
+                            font-size: 18pt;
+                            font-weight: bold;
+                            margin-top: 1px;
+                            font-family: 'Helvetica Neue', Arial, sans-serif;
+                        }
+                        .mcs .sig {
+                            font-size: 7.5pt;
+                            margin-top: 4px;
+                        }
+                        .mcs .sig .line {
+                            border-bottom: 1px solid #000;
+                            height: 14px;
+                            margin-bottom: 1px;
+                        }
+                        .mcs .sig .lbl { color: #444; }
+                        .mcs .sig .slot { margin-bottom: 4px; }
+                    </style>
+
+                    <div class="mcs">
+                        <div class="title">CASH COUNT</div>
+
+                        <div class="meta">
+                            <div class="row">
+                                <span><span class="lbl">Slip #:</span>
+                                    <strong t-out="o.slip_number or '________'"/>
+                                </span>
+                                <span>
+                                    <span t-if="o.count_date"
+                                          t-out="o.count_date.strftime('%m/%d/%y %H:%M')"/>
+                                    <span t-else="">__________</span>
+                                </span>
+                            </div>
+                            <div class="row">
+                                <span><span class="lbl">Loc:</span>
+                                    <strong t-out="o.location_id.name or '________'"/>
+                                </span>
+                                <span><span class="lbl">Type:</span>
+                                    <strong t-out="dict(o._fields['count_type'].selection).get(o.count_type, '')"/>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="total-box">
+                            <div class="lbl">TOTAL CASH</div>
+                            <div class="amt">
+                                <t t-out="'$ %.2f' % (o.total_cash or 0)"/>
+                            </div>
+                        </div>
+
+                        <div class="sig">
+                            <div class="slot">
+                                <div class="line" t-out="o.counted_by_id.name or ''"/>
+                                <div class="lbl">Counted By</div>
+                            </div>
+                            <div class="slot">
+                                <div class="line" t-out="o.witnessed_by_id.name or ''"/>
+                                <div class="lbl">Witnessed By</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Report action: appears in the gear-icon Print menu -->
+    <record id="action_report_cash_count_meeting_slip" model="ir.actions.report">
+        <field name="name">Meeting Cash Count Slip (2x4)</field>
+        <field name="model">elks.cash.count</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.cash_count_meeting_slip_template</field>
+        <field name="report_file">elksfrs.cash_count_meeting_slip_template</field>
+        <field name="binding_model_id" ref="model_elks_cash_count"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_meeting_slip_2x4"/>
+    </record>
+
+</odoo>

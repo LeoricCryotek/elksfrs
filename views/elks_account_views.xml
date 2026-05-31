@@ -172,6 +172,12 @@
                                    options="{'size': [200, 200]}"/>
                             <label for="logo_lodge" string="Lodge Logo"/>
                         </group>
+                        <group>
+                            <field name="officer_poster_emblem" widget="image"
+                                   options="{'size': [200, 200]}"/>
+                            <label for="officer_poster_emblem"
+                                   string="Officer Poster Emblem (optional)"/>
+                        </group>
                     </group>
                     <group string="Tax Information">
                         <field name="tax_classification"/>

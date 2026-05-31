@@ -32,6 +32,12 @@ class ElksLodgeSettings(models.Model):
         help="Lodge-specific logo (e.g. Elks #896). "
              "Shown alongside the primary logo on reports.",
     )
+    officer_poster_emblem = fields.Binary(
+        "Officer Poster Emblem",
+        help="Emblem used on the large-format Officer Photo Poster "
+             "(top-left corner). If left blank the Lodge Logo is used. "
+             "Recommended: square PNG, at least 400px.",
+    )
     state_association = fields.Char("State Association")
     district = fields.Char("District")
     area = fields.Char(

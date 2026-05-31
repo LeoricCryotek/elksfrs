@@ -11,7 +11,9 @@ from . import elks_dues_deposit
 from . import res_partner_frs
 from . import elks_cash_denomination
 from . import elks_cash_par_levels
-from . import elks_register
-from . import elks_register_count_line
-from . import elks_register_transfer
-from . import elks_cash_register_ext
+# elks_register / elks_register_count_line / elks_register_transfer
+# / elks_cash_register_ext were removed in 19.0.2.0. Their stubs remain
+# in the repo as deprecation notes.
+from . import elks_cash_location
+from . import elks_cash_count
+from . import elks_cash_movement

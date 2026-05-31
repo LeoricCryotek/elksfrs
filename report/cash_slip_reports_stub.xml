@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  This file was the Phase 1 stub.  Its content moved to
+  report/cash_slip_reports.xml when the real QWeb templates were
+  added in Phase 2.  This shell remains because the sandbox
+  cannot delete files; it's no longer referenced in __manifest__.py.
+  Safe to delete from the repo manually.
+-->
+<odoo/>

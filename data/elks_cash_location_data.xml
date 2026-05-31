@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ============================================= -->
+        <!-- The Bank — singleton central cash reserve     -->
+        <!-- ============================================= -->
+        <record id="cash_location_bank" model="elks.cash.location">
+            <field name="name">The Bank</field>
+            <field name="code">BANK</field>
+            <field name="location_type">bank</field>
+            <field name="sequence">1</field>
+            <field name="notes">The lodge's central cash reserve, kept in the safe.
+Fills change requests from tills and bags. Counted weekly on Monday.
+Deposits accumulated cash to Operating Checking (10100) on Monday.</field>
+        </record>
+
+    </data>
+</odoo>

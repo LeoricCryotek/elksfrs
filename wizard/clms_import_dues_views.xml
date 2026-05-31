@@ -15,7 +15,7 @@
                        invisible="not auto_create_dues"/>
                 <div class="alert alert-info small" role="alert"
                      invisible="not backfill_existing">
-                    <i class="fa fa-info-circle"/>
+                    <i class="fa fa-info-circle" title="Info"/>
                     Backfill will create dues income records for all paid
                     members who don't already have a dues payment on file.
                     Use this once after your first CLMS import to catch up.

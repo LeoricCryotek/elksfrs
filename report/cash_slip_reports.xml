@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- =====================================================
+         ir.actions.report records that wire the QWeb
+         templates (defined in cash_count_slip.xml,
+         change_request_order_slip.xml, bank_deposit_slip.xml,
+         bag_tag.xml) to the model "Print Slip" buttons.
+         ===================================================== -->
+
+    <record id="action_report_cash_count_slip" model="ir.actions.report">
+        <field name="name">Cash Count Slip</field>
+        <field name="model">elks.cash.count</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.cash_count_slip_template</field>
+        <field name="report_file">elksfrs.cash_count_slip_template</field>
+        <field name="binding_model_id" ref="model_elks_cash_count"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_change_slip" model="ir.actions.report">
+        <field name="name">Change Request / Order Slip</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.change_request_order_slip_template</field>
+        <field name="report_file">elksfrs.change_request_order_slip_template</field>
+    </record>
+
+    <record id="action_report_till_deposit_slip" model="ir.actions.report">
+        <field name="name">Till Deposit Slip</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.bank_deposit_slip_template</field>
+        <field name="report_file">elksfrs.bank_deposit_slip_template</field>
+    </record>
+
+    <record id="action_report_bank_deposit_slip" model="ir.actions.report">
+        <field name="name">Bank Deposit Slip</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.bank_deposit_slip_template</field>
+        <field name="report_file">elksfrs.bank_deposit_slip_template</field>
+        <field name="binding_model_id" ref="model_elks_cash_movement"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_cash_bag_tag" model="ir.actions.report">
+        <field name="name">Cash Bag Tag</field>
+        <field name="model">elks.cash.location</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">elksfrs.cash_bag_tag_template</field>
+        <field name="report_file">elksfrs.cash_bag_tag_template</field>
+    </record>
+
+</odoo>

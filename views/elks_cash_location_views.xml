@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================== -->
+    <!-- Cash Location — List                                -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_location_list" model="ir.ui.view">
+        <field name="name">elks.cash.location.list</field>
+        <field name="model">elks.cash.location</field>
+        <field name="arch" type="xml">
+            <list string="Cash Locations" default_order="location_type, sequence, name">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="location_type"/>
+                <field name="assigned_to_id" optional="show"/>
+                <field name="event_date" optional="hide"/>
+                <field name="starter_total" sum="Starter Total" optional="show"/>
+                <field name="last_count_date" optional="show"/>
+                <field name="last_count_total" optional="show"/>
+                <field name="estimated_balance" optional="hide"/>
+                <field name="active" optional="hide"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Location — Form                                -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_location_form" model="ir.ui.view">
+        <field name="name">elks.cash.location.form</field>
+        <field name="model">elks.cash.location</field>
+        <field name="arch" type="xml">
+            <form string="Cash Location">
+                <header>
+                    <button name="action_view_counts"
+                            type="object"
+                            string="View Counts"
+                            class="btn-secondary"/>
+                    <button name="action_view_movements"
+                            type="object"
+                            string="View Movements"
+                            class="btn-secondary"/>
+                    <button name="action_print_bag_tag"
+                            type="object"
+                            string="Print Bag Tag"
+                            class="btn-secondary"
+                            invisible="location_type != 'bag'"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived"
+                            bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="The Bank / Main Bar Till / ..."/>
+                        </h1>
+                        <label for="code" class="oe_edit_only"/>
+                        <h3>
+                            <field name="code" placeholder="BANK / MAIN / DINING-SUSAN"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group string="Type">
+                            <field name="location_type"/>
+                            <field name="is_bank" invisible="1"/>
+                            <field name="assigned_to_id"
+                                   invisible="location_type not in ('bag', 'till', 'event_till')"/>
+                            <field name="event_date"
+                                   required="location_type == 'event_till'"
+                                   invisible="location_type != 'event_till'"/>
+                            <field name="sequence"/>
+                            <field name="active" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Estimated Balance" invisible="location_type == 'bank'">
+                            <field name="last_count_date" readonly="1"/>
+                            <field name="last_count_total" readonly="1"/>
+                            <field name="estimated_balance" readonly="1"/>
+                        </group>
+                        <group string="Bank Status" invisible="location_type != 'bank'">
+                            <field name="last_count_date" readonly="1"/>
+                            <field name="last_count_total" readonly="1"
+                                   string="Last Count"/>
+                            <field name="estimated_balance" readonly="1"
+                                   help="Approximate — last count plus recorded movements since. Counts on Monday give the authoritative figure."/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Suggested Starter Bank"
+                              invisible="location_type == 'bank'">
+                            <div class="alert alert-info" role="alert">
+                                Suggested starter bank for this till/bag. Not enforced —
+                                actual fills can vary.
+                            </div>
+                            <group>
+                                <group string="Bills">
+                                    <field name="starter_hundreds"/>
+                                    <field name="starter_fifties"/>
+                                    <field name="starter_twenties"/>
+                                    <field name="starter_tens"/>
+                                    <field name="starter_fives"/>
+                                    <field name="starter_twos"/>
+                                    <field name="starter_ones"/>
+                                </group>
+                                <group string="Coins">
+                                    <field name="starter_dollar_coins"/>
+                                    <field name="starter_half_dollars"/>
+                                    <field name="starter_quarters"/>
+                                    <field name="starter_dimes"/>
+                                    <field name="starter_nickels"/>
+                                    <field name="starter_pennies"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="starter_total"/>
+                            </group>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes" nolabel="1"
+                                   placeholder="Anything worth remembering about this location..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Location — Search                              -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_location_search" model="ir.ui.view">
+        <field name="name">elks.cash.location.search</field>
+        <field name="model">elks.cash.location</field>
+        <field name="arch" type="xml">
+            <search string="Cash Locations">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="assigned_to_id"/>
+                <separator/>
+                <filter string="Bank" name="filter_bank"
+                        domain="[('location_type', '=', 'bank')]"/>
+                <filter string="Tills" name="filter_till"
+                        domain="[('location_type', '=', 'till')]"/>
+                <filter string="Personal Bags" name="filter_bag"
+                        domain="[('location_type', '=', 'bag')]"/>
+                <filter string="Event Tills" name="filter_event"
+                        domain="[('location_type', '=', 'event_till')]"/>
+                <separator/>
+                <filter string="Archived" name="filter_archived"
+                        domain="[('active', '=', False)]"/>
+                <separator/>
+                <!-- Odoo 19: group-by filters live flat under <search>;
+                     the web client routes them into the Group By dropdown
+                     based on the group_by key in their context. -->
+                <filter string="Type" name="group_type"
+                        context="{'group_by': 'location_type'}"/>
+                <filter string="Assigned To" name="group_assigned"
+                        context="{'group_by': 'assigned_to_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Action                                              -->
+    <!-- ================================================== -->
+    <record id="action_elks_cash_location" model="ir.actions.act_window">
+        <field name="name">Cash Locations</field>
+        <field name="res_model">elks.cash.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_elks_cash_location_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Set up your cash locations
+            </p>
+            <p>
+                <strong>The Bank</strong> is the lodge's central safe — there should
+                be exactly one Bank location.<br/>
+                <strong>Tills</strong> are permanent point-of-sale drawers
+                (Main Bar, Dining).<br/>
+                <strong>Personal Bags</strong> are per-server cash bags,
+                assigned to a partner.<br/>
+                <strong>Event Tills</strong> are temporary, used for one-off events.
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -40,9 +40,9 @@ access_elks_budget_amendment_line_manager,elks.budget.amendment.line.manager,mod
 access_process_paid_members_wizard_manager,process.paid.members.wizard.manager,model_process_paid_members_wizard,group_elksfrs_manager,1,1,1,1
 access_qb_pnl_reconcile_wizard_manager,qb.pnl.reconcile.wizard.manager,model_qb_pnl_reconcile_wizard,group_elksfrs_manager,1,1,1,1
 access_clms_payment_import_wizard_manager,clms.payment.import.wizard.manager,model_clms_payment_import_wizard,group_elksfrs_manager,1,1,1,1
-access_elks_register_user,elks.register.user,model_elks_register,group_elksfrs_user,1,0,0,0
-access_elks_register_manager,elks.register.manager,model_elks_register,group_elksfrs_manager,1,1,1,1
-access_elks_register_count_line_user,elks.register.count.line.user,model_elks_register_count_line,group_elksfrs_user,1,0,0,0
-access_elks_register_count_line_manager,elks.register.count.line.manager,model_elks_register_count_line,group_elksfrs_manager,1,1,1,1
-access_elks_register_transfer_user,elks.register.transfer.user,model_elks_register_transfer,group_elksfrs_user,1,0,0,0
-access_elks_register_transfer_manager,elks.register.transfer.manager,model_elks_register_transfer,group_elksfrs_manager,1,1,1,1
+access_elks_cash_location_user,elks.cash.location.user,model_elks_cash_location,group_elksfrs_user,1,0,0,0
+access_elks_cash_location_manager,elks.cash.location.manager,model_elks_cash_location,group_elksfrs_manager,1,1,1,1
+access_elks_cash_count_user,elks.cash.count.user,model_elks_cash_count,group_elksfrs_user,1,1,1,0
+access_elks_cash_count_manager,elks.cash.count.manager,model_elks_cash_count,group_elksfrs_manager,1,1,1,1
+access_elks_cash_movement_user,elks.cash.movement.user,model_elks_cash_movement,group_elksfrs_user,1,1,1,0
+access_elks_cash_movement_manager,elks.cash.movement.manager,model_elks_cash_movement,group_elksfrs_manager,1,1,1,1

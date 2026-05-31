@@ -44,4 +44,30 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Inject the dues payment list into the CLMS Payments tab that
+         elkscontacts builds. Lives here (not in elkscontacts) because
+         the x_dues_payment_ids field is defined by elksfrs, and
+         elkscontacts loads before elksfrs in the install order. -->
+    <record id="view_partner_form_clms_payments_inject" model="ir.ui.view">
+        <field name="name">res.partner.form.clms.payments.inject</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="elkscontacts.view_partner_form_clms_notebook"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='clms_payments']" position="inside">
+                <field name="x_dues_payment_ids"
+                       nolabel="1" mode="list"
+                       invisible="not x_dues_payment_ids">
+                    <list>
+                        <field name="name"/>
+                        <field name="payment_date"/>
+                        <field name="payment_type"/>
+                        <field name="amount_total" sum="Total"/>
+                        <field name="check_number"/>
+                        <field name="lodge_year"/>
+                    </list>
+                </field>
+            </xpath>
+        </field>
+    </record>
 </odoo>

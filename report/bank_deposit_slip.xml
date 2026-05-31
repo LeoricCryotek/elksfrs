@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- Bank Deposit Slip                                      -->
+    <!-- Used for the Monday bank-deposit run AND bank stock-up -->
+    <!-- AND till_deposit (the same physical paper form).       -->
+    <!-- ===================================================== -->
+    <template id="bank_deposit_slip_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .bdslip { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11pt; }
+                            .bdslip h2 { margin: 0 0 4px 0; }
+                            .bdslip .header { border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+                            .bdslip table.denoms { width: 100%; border-collapse: collapse; }
+                            .bdslip table.denoms td, .bdslip table.denoms th { border: 1px solid #888; padding: 4px 7px; }
+                            .bdslip table.denoms th { background: #eee; text-align: left; }
+                            .bdslip td.qty-cell { width: 80px; text-align: center; min-height: 22px; }
+                            .bdslip td.amount-cell { width: 120px; text-align: right; }
+                            .bdslip td.denom-cell { width: 130px; }
+                            .bdslip .subtotal-row td { font-weight: bold; background: #f4f4f4; }
+                            .bdslip .grand-total { margin-top: 14px; padding: 10px; border: 2px solid #000; font-size: 14pt; display: flex; justify-content: space-between; }
+                            .bdslip .grand-total .label { font-weight: bold; }
+                            .bdslip .sig-row { margin-top: 22px; display: flex; gap: 2em; }
+                            .bdslip .sig-row .sig { flex: 1; }
+                            .bdslip .sig-row .sig-line { border-bottom: 1px solid #000; height: 22px; }
+                            .bdslip .sig-row small { color: #555; }
+                            .bdslip .serial { font-family: monospace; font-size: 13pt; letter-spacing: 1px; }
+                            .bdslip .je-note { background: #f0f8ff; border: 1px solid #b0d0e8; padding: 6px 10px; margin-top: 10px; font-size: 9pt; }
+                        </style>
+
+                        <div class="bdslip">
+
+                            <!-- Header -->
+                            <div class="header" style="display: flex; justify-content: space-between;">
+                                <div>
+                                    <h2>
+                                        <t t-if="o.movement_type == 'bank_deposit'">BANK DEPOSIT SLIP</t>
+                                        <t t-elif="o.movement_type == 'bank_stock'">BANK STOCK-UP SLIP</t>
+                                        <t t-elif="o.movement_type == 'till_deposit'">TILL DEPOSIT SLIP</t>
+                                        <t t-else="">CASH MOVEMENT SLIP</t>
+                                    </h2>
+                                    <div t-if="o.movement_type == 'bank_deposit'">
+                                        From: <strong t-out="o.from_location_id.name or ''"/>
+                                    </div>
+                                    <div t-if="o.movement_type == 'bank_deposit'">
+                                        To: <strong>Operating Checking (GL 10100)</strong>
+                                    </div>
+                                    <div t-if="o.movement_type == 'bank_stock'">
+                                        From: <strong>Operating Checking (GL 10100)</strong>
+                                    </div>
+                                    <div t-if="o.movement_type == 'bank_stock'">
+                                        To: <strong t-out="o.to_location_id.name or ''"/>
+                                    </div>
+                                    <div t-if="o.movement_type == 'till_deposit'">
+                                        From: <strong t-out="o.from_location_id.name or ''"/>
+                                    </div>
+                                    <div t-if="o.movement_type == 'till_deposit'">
+                                        To: <strong t-out="o.to_location_id.name or ''"/>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div>Slip #: <span class="serial" t-out="o.slip_number or '____________'"/></div>
+                                    <div>Date:
+                                        <strong>
+                                            <span t-if="o.move_date"
+                                                  t-out="o.move_date.strftime('%Y-%m-%d %H:%M')"/>
+                                            <span t-else="">____________</span>
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Denomination breakdown -->
+                            <table class="denoms">
+                                <thead>
+                                    <tr>
+                                        <th class="denom-cell">Denomination</th>
+                                        <th style="text-align: center;">Count</th>
+                                        <th style="text-align: right;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>$100 Bills</td>
+                                        <td class="qty-cell"><t t-out="o.qty_hundreds or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_hundreds"
+                                               t-out="'$ %.2f' % (o.qty_hundreds * 100.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>$50 Bills</td>
+                                        <td class="qty-cell"><t t-out="o.qty_fifties or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_fifties"
+                                               t-out="'$ %.2f' % (o.qty_fifties * 50.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>$20 Bills</td>
+                                        <td class="qty-cell"><t t-out="o.qty_twenties or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_twenties"
+                                               t-out="'$ %.2f' % (o.qty_twenties * 20.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>$10 Bills</td>
+                                        <td class="qty-cell"><t t-out="o.qty_tens or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_tens"
+                                               t-out="'$ %.2f' % (o.qty_tens * 10.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>$5 Bills</td>
+                                        <td class="qty-cell"><t t-out="o.qty_fives or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_fives"
+                                               t-out="'$ %.2f' % (o.qty_fives * 5.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>$2 Bills</td>
+                                        <td class="qty-cell"><t t-out="o.qty_twos or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_twos"
+                                               t-out="'$ %.2f' % (o.qty_twos * 2.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>$1 Bills</td>
+                                        <td class="qty-cell"><t t-out="o.qty_ones or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_ones"
+                                               t-out="'$ %.2f' % (o.qty_ones * 1.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>$1 Coins</td>
+                                        <td class="qty-cell"><t t-out="o.qty_dollar_coins or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_dollar_coins"
+                                               t-out="'$ %.2f' % (o.qty_dollar_coins * 1.0)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Half Dollars</td>
+                                        <td class="qty-cell"><t t-out="o.qty_half_dollars or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_half_dollars"
+                                               t-out="'$ %.2f' % (o.qty_half_dollars * 0.50)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Quarters</td>
+                                        <td class="qty-cell"><t t-out="o.qty_quarters or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_quarters"
+                                               t-out="'$ %.2f' % (o.qty_quarters * 0.25)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dimes</td>
+                                        <td class="qty-cell"><t t-out="o.qty_dimes or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_dimes"
+                                               t-out="'$ %.2f' % (o.qty_dimes * 0.10)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Nickels</td>
+                                        <td class="qty-cell"><t t-out="o.qty_nickels or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_nickels"
+                                               t-out="'$ %.2f' % (o.qty_nickels * 0.05)"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pennies</td>
+                                        <td class="qty-cell"><t t-out="o.qty_pennies or ''"/></td>
+                                        <td class="amount-cell">
+                                            <t t-if="o.qty_pennies"
+                                               t-out="'$ %.2f' % (o.qty_pennies * 0.01)"/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Grand total -->
+                            <div class="grand-total">
+                                <div class="label">DEPOSIT TOTAL</div>
+                                <div>
+                                    <t t-out="'$ %.2f' % (o.total_amount or 0)"/>
+                                </div>
+                            </div>
+
+                            <!-- JE note (for the deposit run and stock-up) -->
+                            <div class="je-note" t-if="o.posts_journal">
+                                <strong>Journal Entry:</strong>
+                                <t t-if="o.movement_type == 'bank_deposit'">
+                                    Dr 10100 Operating Checking
+                                    <t t-out="'$ %.2f' % (o.total_amount or 0)"/>
+                                    / Cr 10000 Petty Cash
+                                    <t t-out="'$ %.2f' % (o.total_amount or 0)"/>
+                                </t>
+                                <t t-if="o.movement_type == 'bank_stock'">
+                                    Dr 10000 Petty Cash
+                                    <t t-out="'$ %.2f' % (o.total_amount or 0)"/>
+                                    / Cr 10100 Operating Checking
+                                    <t t-out="'$ %.2f' % (o.total_amount or 0)"/>
+                                </t>
+                                <span t-if="o.journal_entry_id">
+                                    — JE
+                                    <strong t-out="o.journal_entry_id.entry_number"/>
+                                </span>
+                            </div>
+
+                            <!-- Signature lines -->
+                            <div class="sig-row">
+                                <div class="sig">
+                                    <div class="sig-line"
+                                         t-out="o.done_by_id.name or ''"/>
+                                    <small>Done By</small>
+                                </div>
+                                <div class="sig">
+                                    <div class="sig-line"
+                                         t-out="o.authorized_by_id.name or ''"/>
+                                    <small>Authorized By</small>
+                                </div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div style="margin-top: 14px;" t-if="o.notes">
+                                <strong>Notes:</strong>
+                                <div style="white-space: pre-wrap;" t-out="o.notes"/>
+                            </div>
+
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

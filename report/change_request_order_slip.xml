@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- Change Request / Order Slip                            -->
+    <!-- One piece of paper, two sides:                         -->
+    <!--   LEFT  = what the Till is turning in to the Bank      -->
+    <!--   RIGHT = what the Bank is giving back to the Till     -->
+    <!-- Both halves can be blank for hand-completion.          -->
+    <!-- ===================================================== -->
+    <template id="change_request_order_slip_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .chgslip { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11pt; }
+                            .chgslip h2 { margin: 0 0 4px 0; }
+                            .chgslip .header { border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+                            .chgslip .columns { display: flex; gap: 16px; }
+                            .chgslip .columns > div { flex: 1; }
+                            .chgslip table.denoms { width: 100%; border-collapse: collapse; }
+                            .chgslip table.denoms td, .chgslip table.denoms th { border: 1px solid #888; padding: 4px 6px; }
+                            .chgslip table.denoms th { background: #eee; text-align: left; }
+                            .chgslip td.qty-cell { width: 60px; text-align: center; min-height: 20px; }
+                            .chgslip td.amount-cell { width: 90px; text-align: right; }
+                            .chgslip .subtotal-row td { font-weight: bold; background: #f4f4f4; }
+                            .chgslip .grand-total { padding: 6px 8px; border: 2px solid #000; margin-top: 8px; }
+                            .chgslip .grand-total .label { font-weight: bold; }
+                            .chgslip .columns h3 { background: #d0e3f5; padding: 6px 8px; margin: 0 0 6px 0; border: 1px solid #888; }
+                            .chgslip .columns.bank-fills h3 { background: #f5d0d0; }
+                            .chgslip .sig-row { margin-top: 18px; display: flex; gap: 2em; }
+                            .chgslip .sig-row .sig { flex: 1; }
+                            .chgslip .sig-row .sig-line { border-bottom: 1px solid #000; height: 22px; }
+                            .chgslip .sig-row small { color: #555; }
+                            .chgslip .serial { font-family: monospace; font-size: 13pt; letter-spacing: 1px; }
+                        </style>
+
+                        <div class="chgslip">
+
+                            <!-- Header -->
+                            <div class="header" style="display: flex; justify-content: space-between;">
+                                <div>
+                                    <h2>CHANGE SLIP</h2>
+                                    <div>From:
+                                        <strong t-out="o.from_location_id.name or '________________________'"/>
+                                    </div>
+                                    <div>To:
+                                        <strong t-out="o.to_location_id.name or '________________________'"/>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div>Slip #: <span class="serial" t-out="o.slip_number or '____________'"/></div>
+                                    <div>Date:
+                                        <strong>
+                                            <span t-if="o.move_date"
+                                                  t-out="o.move_date.strftime('%Y-%m-%d %H:%M')"/>
+                                            <span t-else="">____________</span>
+                                        </strong>
+                                    </div>
+                                    <div>Type:
+                                        <strong>
+                                            <t t-out="dict(o._fields['movement_type'].selection).get(o.movement_type, '')"/>
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p style="font-size: 9pt; color: #555; margin-bottom: 6px;">
+                                <strong>How to use:</strong> Fill in the LEFT side with the bills
+                                you're handing to the Bank.  The Bank fills in the RIGHT side
+                                with the change they give you back.  Both totals should match.
+                            </p>
+
+                            <div class="columns">
+                                <!-- LEFT: Turned In -->
+                                <div>
+                                    <h3>TURNED IN <span style="font-weight: normal; font-size: 9pt;">(Till → Bank)</span></h3>
+                                    <table class="denoms">
+                                        <thead>
+                                            <tr>
+                                                <th>Denom.</th>
+                                                <th style="text-align: center;">#</th>
+                                                <th style="text-align: right;">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>$100</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$50</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$20</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$10</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$5</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$2</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$1</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$1 coin</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$0.50</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$0.25</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$0.10</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$0.05</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr><td>$0.01</td><td class="qty-cell">&#160;</td><td class="amount-cell">&#160;</td></tr>
+                                            <tr class="subtotal-row">
+                                                <td colspan="2">Subtotal</td>
+                                                <td class="amount-cell">&#160;</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- RIGHT: Received -->
+                                <div>
+                                    <h3 style="background: #f5d0d0;">RECEIVED <span style="font-weight: normal; font-size: 9pt;">(Bank → Till)</span></h3>
+                                    <table class="denoms">
+                                        <thead>
+                                            <tr>
+                                                <th>Denom.</th>
+                                                <th style="text-align: center;">#</th>
+                                                <th style="text-align: right;">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>$100</td>
+                                                <td class="qty-cell"><t t-out="o.qty_hundreds or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_hundreds"
+                                                       t-out="'$ %.2f' % (o.qty_hundreds * 100.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$50</td>
+                                                <td class="qty-cell"><t t-out="o.qty_fifties or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_fifties"
+                                                       t-out="'$ %.2f' % (o.qty_fifties * 50.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$20</td>
+                                                <td class="qty-cell"><t t-out="o.qty_twenties or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_twenties"
+                                                       t-out="'$ %.2f' % (o.qty_twenties * 20.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$10</td>
+                                                <td class="qty-cell"><t t-out="o.qty_tens or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_tens"
+                                                       t-out="'$ %.2f' % (o.qty_tens * 10.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$5</td>
+                                                <td class="qty-cell"><t t-out="o.qty_fives or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_fives"
+                                                       t-out="'$ %.2f' % (o.qty_fives * 5.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$2</td>
+                                                <td class="qty-cell"><t t-out="o.qty_twos or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_twos"
+                                                       t-out="'$ %.2f' % (o.qty_twos * 2.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$1</td>
+                                                <td class="qty-cell"><t t-out="o.qty_ones or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_ones"
+                                                       t-out="'$ %.2f' % (o.qty_ones * 1.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$1 coin</td>
+                                                <td class="qty-cell"><t t-out="o.qty_dollar_coins or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_dollar_coins"
+                                                       t-out="'$ %.2f' % (o.qty_dollar_coins * 1.0)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.50</td>
+                                                <td class="qty-cell"><t t-out="o.qty_half_dollars or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_half_dollars"
+                                                       t-out="'$ %.2f' % (o.qty_half_dollars * 0.50)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.25</td>
+                                                <td class="qty-cell"><t t-out="o.qty_quarters or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_quarters"
+                                                       t-out="'$ %.2f' % (o.qty_quarters * 0.25)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.10</td>
+                                                <td class="qty-cell"><t t-out="o.qty_dimes or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_dimes"
+                                                       t-out="'$ %.2f' % (o.qty_dimes * 0.10)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.05</td>
+                                                <td class="qty-cell"><t t-out="o.qty_nickels or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_nickels"
+                                                       t-out="'$ %.2f' % (o.qty_nickels * 0.05)"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.01</td>
+                                                <td class="qty-cell"><t t-out="o.qty_pennies or ''"/></td>
+                                                <td class="amount-cell">
+                                                    <t t-if="o.qty_pennies"
+                                                       t-out="'$ %.2f' % (o.qty_pennies * 0.01)"/>
+                                                </td>
+                                            </tr>
+                                            <tr class="subtotal-row">
+                                                <td colspan="2">Subtotal</td>
+                                                <td class="amount-cell">
+                                                    <t t-out="'$ %.2f' % (o.total_amount or 0)"/>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Signature lines -->
+                            <div class="sig-row">
+                                <div class="sig">
+                                    <div class="sig-line"
+                                         t-out="o.done_by_id.name or ''"/>
+                                    <small>Done By (Till)</small>
+                                </div>
+                                <div class="sig">
+                                    <div class="sig-line"
+                                         t-out="o.authorized_by_id.name or ''"/>
+                                    <small>Bank Manager (Filled)</small>
+                                </div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div style="margin-top: 14px;" t-if="o.notes">
+                                <strong>Notes:</strong>
+                                <div style="white-space: pre-wrap;" t-out="o.notes"/>
+                            </div>
+
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- Cash Count Slip — matches the reference picture       -->
+    <!-- Bills column | Coins column | Totals at the bottom    -->
+    <!-- Printable blank (zero quantities) or filled-in        -->
+    <!-- ===================================================== -->
+    <template id="cash_count_slip_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .ccslip { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11pt; }
+                            .ccslip h2 { margin: 0 0 4px 0; }
+                            .ccslip .header { border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+                            .ccslip .header-grid { display: flex; justify-content: space-between; gap: 1em; margin-bottom: 6px; }
+                            .ccslip table.denoms { width: 100%; border-collapse: collapse; }
+                            .ccslip table.denoms td, .ccslip table.denoms th { border: 1px solid #888; padding: 5px 7px; }
+                            .ccslip table.denoms th { background: #eee; text-align: left; }
+                            .ccslip td.qty-cell { width: 60px; text-align: center; min-height: 22px; }
+                            .ccslip td.amount-cell { width: 100px; text-align: right; }
+                            .ccslip td.denom-cell { width: 100px; }
+                            .ccslip .subtotal-row td { font-weight: bold; background: #f4f4f4; }
+                            .ccslip .grand-total { margin-top: 14px; padding: 8px; border: 2px solid #000; font-size: 14pt; }
+                            .ccslip .grand-total .label { font-weight: bold; }
+                            .ccslip .sig-row { margin-top: 18px; display: flex; gap: 2em; }
+                            .ccslip .sig-row .sig { flex: 1; }
+                            .ccslip .sig-row .sig-line { border-bottom: 1px solid #000; height: 22px; }
+                            .ccslip .sig-row small { color: #555; }
+                            .ccslip .columns { display: flex; gap: 14px; }
+                            .ccslip .columns > div { flex: 1; }
+                            .ccslip .serial { font-family: monospace; font-size: 13pt; letter-spacing: 1px; }
+                        </style>
+
+                        <div class="ccslip">
+
+                            <!-- Header -->
+                            <div class="header">
+                                <div class="header-grid">
+                                    <div>
+                                        <h2>CASH COUNT SLIP</h2>
+                                        <div>Location:
+                                            <strong t-out="o.location_id.name or '________________________'"/>
+                                            <span t-if="o.location_id.code">
+                                                (<span t-out="o.location_id.code"/>)
+                                            </span>
+                                        </div>
+                                        <div>Type:
+                                            <strong>
+                                                <t t-out="dict(o._fields['count_type'].selection).get(o.count_type, '')"/>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div>Slip #: <span class="serial" t-out="o.slip_number or '____________'"/></div>
+                                        <div>Date:
+                                            <strong>
+                                                <span t-if="o.count_date"
+                                                      t-out="o.count_date.strftime('%Y-%m-%d %H:%M')"/>
+                                                <span t-else="">____________</span>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bills + Coins side by side -->
+                            <div class="columns">
+                                <!-- BILLS -->
+                                <div>
+                                    <table class="denoms">
+                                        <thead>
+                                            <tr>
+                                                <th colspan="3">BILLS</th>
+                                            </tr>
+                                            <tr>
+                                                <th>Denom.</th>
+                                                <th style="text-align: center;">Count</th>
+                                                <th style="text-align: right;">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="denom-cell">$100.00</td>
+                                                <td class="qty-cell"><t t-out="o.qty_hundreds or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_hundreds or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$50.00</td>
+                                                <td class="qty-cell"><t t-out="o.qty_fifties or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_fifties or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$20.00</td>
+                                                <td class="qty-cell"><t t-out="o.qty_twenties or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_twenties or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$10.00</td>
+                                                <td class="qty-cell"><t t-out="o.qty_tens or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_tens or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$5.00</td>
+                                                <td class="qty-cell"><t t-out="o.qty_fives or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_fives or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$2.00</td>
+                                                <td class="qty-cell"><t t-out="o.qty_twos or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_twos or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$1.00</td>
+                                                <td class="qty-cell"><t t-out="o.qty_ones or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_ones or 0)"/></td>
+                                            </tr>
+                                            <tr class="subtotal-row">
+                                                <td colspan="2">Total Bills</td>
+                                                <td class="amount-cell">
+                                                    <t t-out="'$ %.2f' % (o.total_bills or 0)"/>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- COINS -->
+                                <div>
+                                    <table class="denoms">
+                                        <thead>
+                                            <tr>
+                                                <th colspan="3">COINS</th>
+                                            </tr>
+                                            <tr>
+                                                <th>Denom.</th>
+                                                <th style="text-align: center;">Count</th>
+                                                <th style="text-align: right;">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="denom-cell">$1.00 coin</td>
+                                                <td class="qty-cell"><t t-out="o.qty_dollar_coins or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_dollar_coins or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.50</td>
+                                                <td class="qty-cell"><t t-out="o.qty_half_dollars or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_half_dollars or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.25</td>
+                                                <td class="qty-cell"><t t-out="o.qty_quarters or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_quarters or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.10</td>
+                                                <td class="qty-cell"><t t-out="o.qty_dimes or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_dimes or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.05</td>
+                                                <td class="qty-cell"><t t-out="o.qty_nickels or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_nickels or 0)"/></td>
+                                            </tr>
+                                            <tr>
+                                                <td>$0.01</td>
+                                                <td class="qty-cell"><t t-out="o.qty_pennies or ''"/></td>
+                                                <td class="amount-cell"><t t-out="'$ %.2f' % (o.sub_pennies or 0)"/></td>
+                                            </tr>
+                                            <!-- blank row for spacing parity with bills -->
+                                            <tr>
+                                                <td>&#160;</td><td>&#160;</td><td>&#160;</td>
+                                            </tr>
+                                            <tr class="subtotal-row">
+                                                <td colspan="2">Total Coins</td>
+                                                <td class="amount-cell">
+                                                    <t t-out="'$ %.2f' % (o.total_coins or 0)"/>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Grand total -->
+                            <div class="grand-total" style="display: flex; justify-content: space-between;">
+                                <div class="label">TOTAL CASH</div>
+                                <div>
+                                    <t t-out="'$ %.2f' % (o.total_cash or 0)"/>
+                                </div>
+                            </div>
+
+                            <!-- Signature lines -->
+                            <div class="sig-row">
+                                <div class="sig">
+                                    <div class="sig-line"
+                                         t-out="o.counted_by_id.name or ''"/>
+                                    <small>Counted By</small>
+                                </div>
+                                <div class="sig">
+                                    <div class="sig-line"
+                                         t-out="o.witnessed_by_id.name or ''"/>
+                                    <small>Witnessed By</small>
+                                </div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div style="margin-top: 14px;" t-if="o.notes">
+                                <strong>Notes:</strong>
+                                <div style="white-space: pre-wrap;" t-out="o.notes"/>
+                            </div>
+
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

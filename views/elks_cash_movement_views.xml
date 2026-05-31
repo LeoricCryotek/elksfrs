@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================== -->
+    <!-- Cash Movement — List                                -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_movement_list" model="ir.ui.view">
+        <field name="name">elks.cash.movement.list</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="arch" type="xml">
+            <list string="Cash Movements"
+                  decoration-muted="state == 'cancelled'"
+                  decoration-success="state == 'posted'">
+                <field name="slip_number"/>
+                <field name="move_date"/>
+                <field name="movement_type"/>
+                <field name="from_location_id" optional="show"/>
+                <field name="to_location_id" optional="show"/>
+                <field name="done_by_id" optional="show"/>
+                <field name="authorized_by_id" optional="hide"/>
+                <field name="total_amount" sum="Total"/>
+                <field name="journal_entry_id" optional="hide"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'posted'"
+                       decoration-muted="state == 'cancelled'"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="posts_journal" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Movement — Form                                -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_movement_form" model="ir.ui.view">
+        <field name="name">elks.cash.movement.form</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="arch" type="xml">
+            <form string="Cash Movement">
+                <header>
+                    <button name="action_post"
+                            type="object"
+                            string="Post"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft"
+                            type="object"
+                            string="Reset to Draft"
+                            class="btn-secondary"
+                            invisible="state == 'draft'"/>
+                    <button name="action_cancel"
+                            type="object"
+                            string="Cancel"
+                            class="btn-secondary"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_print_slip"
+                            type="object"
+                            string="Print Slip"
+                            class="btn-secondary"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,posted"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-info" role="alert"
+                         invisible="not posts_journal">
+                        Posting this movement will automatically create a
+                        journal entry: <strong>bank deposit</strong> moves
+                        cash from Petty Cash (10000) to Operating Checking
+                        (10100); <strong>bank stock-up</strong> goes the
+                        other way.
+                    </div>
+                    <div class="oe_title">
+                        <label for="slip_number" class="oe_edit_only"/>
+                        <h1>
+                            <field name="slip_number" placeholder="auto-generated"/>
+                        </h1>
+                        <h3 class="text-muted">
+                            <field name="name" readonly="1" nolabel="1"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group string="Movement">
+                            <field name="movement_type"
+                                   readonly="state != 'draft'"/>
+                            <field name="move_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="posts_journal" invisible="1"/>
+                        </group>
+                        <group string="Route">
+                            <field name="from_location_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"
+                                   invisible="movement_type == 'bank_stock'"/>
+                            <field name="from_account_code"
+                                   readonly="1"
+                                   string="From GL"
+                                   invisible="movement_type != 'bank_stock'"/>
+                            <field name="to_location_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"
+                                   invisible="movement_type == 'bank_deposit'"/>
+                            <field name="to_account_code"
+                                   readonly="1"
+                                   string="To GL"
+                                   invisible="movement_type != 'bank_deposit'"/>
+                        </group>
+                        <group string="People">
+                            <field name="done_by_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="authorized_by_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Linked Journal Entry"
+                               invisible="not journal_entry_id">
+                            <field name="journal_entry_id" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Denomination Breakdown">
+                        <group string="Bills">
+                            <field name="qty_hundreds"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_fifties"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_twenties"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_tens"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_fives"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_twos"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_ones"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Coins">
+                            <field name="qty_dollar_coins"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_half_dollars"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_quarters"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_dimes"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_nickels"
+                                   readonly="state != 'draft'"/>
+                            <field name="qty_pennies"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="total_amount" readonly="1"
+                               class="oe_subtotal_footer_separator"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"
+                               placeholder="Slip notes, anything memorable..."/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Movement — Graph (deposit trend)               -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_movement_graph" model="ir.ui.view">
+        <field name="name">elks.cash.movement.graph</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="arch" type="xml">
+            <graph string="Cash Movements" type="bar" sample="1">
+                <field name="move_date" interval="week"/>
+                <field name="movement_type"/>
+                <field name="total_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Movement — Pivot                               -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_movement_pivot" model="ir.ui.view">
+        <field name="name">elks.cash.movement.pivot</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="arch" type="xml">
+            <pivot string="Cash Movements">
+                <field name="movement_type" type="row"/>
+                <field name="move_date" interval="month" type="col"/>
+                <field name="total_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Movement — Search                              -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_movement_search" model="ir.ui.view">
+        <field name="name">elks.cash.movement.search</field>
+        <field name="model">elks.cash.movement</field>
+        <field name="arch" type="xml">
+            <search string="Cash Movements">
+                <field name="slip_number"/>
+                <field name="from_location_id"/>
+                <field name="to_location_id"/>
+                <field name="done_by_id"/>
+                <separator/>
+                <filter string="Draft" name="filter_draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter string="Posted" name="filter_posted"
+                        domain="[('state', '=', 'posted')]"/>
+                <separator/>
+                <filter string="Change Requests" name="filter_change_req"
+                        domain="[('movement_type', '=', 'change_request')]"/>
+                <filter string="Change Orders" name="filter_change_ord"
+                        domain="[('movement_type', '=', 'change_order')]"/>
+                <filter string="Till Deposits" name="filter_till_dep"
+                        domain="[('movement_type', '=', 'till_deposit')]"/>
+                <filter string="Bank Deposits" name="filter_bank_dep"
+                        domain="[('movement_type', '=', 'bank_deposit')]"/>
+                <filter string="Bank Stock-Ups" name="filter_bank_stock"
+                        domain="[('movement_type', '=', 'bank_stock')]"/>
+                <separator/>
+                <filter string="This Month" name="filter_this_month"
+                        domain="[('move_date', '&gt;=', (context_today().replace(day=1)).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <!-- Odoo 19: group-by filters live flat under <search>. -->
+                <filter string="Type" name="group_type"
+                        context="{'group_by': 'movement_type'}"/>
+                <filter string="From" name="group_from"
+                        context="{'group_by': 'from_location_id'}"/>
+                <filter string="To" name="group_to"
+                        context="{'group_by': 'to_location_id'}"/>
+                <filter string="Done By" name="group_done_by"
+                        context="{'group_by': 'done_by_id'}"/>
+                <filter string="Week" name="group_week"
+                        context="{'group_by': 'move_date:week'}"/>
+                <filter string="Month" name="group_month"
+                        context="{'group_by': 'move_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Action                                              -->
+    <!-- ================================================== -->
+    <record id="action_elks_cash_movement" model="ir.actions.act_window">
+        <field name="name">Cash Movements</field>
+        <field name="res_model">elks.cash.movement</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+        <field name="search_view_id" ref="view_elks_cash_movement_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record a cash movement
+            </p>
+            <p>
+                Most movements are paper-first — print blank slips, hand-fill,
+                and record here later if you want a digital trail.
+                <br/>
+                The <strong>Bank Deposit</strong> movement is the one that
+                posts a journal entry — use it for the Monday deposit run.
+            </p>
+        </field>
+    </record>
+
+    <!-- Filtered shortcut: just Monday bank deposits, for charting -->
+    <record id="action_elks_bank_deposits_only" model="ir.actions.act_window">
+        <field name="name">Bank Deposits (Monday Run)</field>
+        <field name="res_model">elks.cash.movement</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+        <field name="domain">[('movement_type', '=', 'bank_deposit')]</field>
+        <field name="context">{'default_movement_type': 'bank_deposit'}</field>
+    </record>
+
+</odoo>

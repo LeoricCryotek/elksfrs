@@ -81,6 +81,37 @@
               action="action_elks_general_ledger"
               sequence="20"/>
 
+    <!-- ===== Cash Management ===== -->
+    <menuitem id="menu_elksfrs_cash"
+              name="Cash Management"
+              parent="menu_elksfrs_root"
+              sequence="15"/>
+
+    <menuitem id="menu_elksfrs_cash_counts"
+              name="Counts"
+              parent="menu_elksfrs_cash"
+              action="action_elks_cash_count"
+              sequence="10"/>
+
+    <menuitem id="menu_elksfrs_cash_movements"
+              name="Movements"
+              parent="menu_elksfrs_cash"
+              action="action_elks_cash_movement"
+              sequence="20"/>
+
+    <menuitem id="menu_elksfrs_cash_bank_deposits"
+              name="Bank Deposits"
+              parent="menu_elksfrs_cash"
+              action="action_elks_bank_deposits_only"
+              sequence="30"/>
+
+    <menuitem id="menu_elksfrs_cash_locations"
+              name="Locations (Bank, Tills, Bags)"
+              parent="menu_elksfrs_cash"
+              action="action_elks_cash_location"
+              groups="group_elksfrs_manager"
+              sequence="50"/>
+
     <!-- ===== FRS Reporting ===== -->
     <menuitem id="menu_elksfrs_reporting"
               name="FRS Reporting"
@@ -173,11 +204,8 @@
               action="action_elks_department"
               sequence="20"/>
 
-    <menuitem id="menu_elksfrs_registers"
-              name="Registers / Tills"
-              parent="menu_elksfrs_config"
-              action="action_elks_register"
-              sequence="25"/>
+    <!-- menu_elksfrs_registers removed in 19.0.2.0 — replaced by
+         menu_elksfrs_cash_locations under the Cash Management section. -->
 
     <menuitem id="menu_elksfrs_settings"
               name="Lodge Settings"

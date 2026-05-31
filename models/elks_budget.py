@@ -210,7 +210,7 @@ class ElksBudget(models.Model):
             if not rec.line_ids:
                 rec.department_chart_html = (
                     '<div class="text-muted text-center p-4">'
-                    '<i class="fa fa-bar-chart fa-2x mb-2"/><br/>'
+                    '<i class="fa fa-bar-chart fa-2x mb-2" title="Chart"/><br/>'
                     'No budget lines yet — add lines to see the chart.</div>'
                 )
                 continue
@@ -280,7 +280,7 @@ class ElksBudget(models.Model):
             html = (
                 '<div class="p-2">'
                 '<h5 class="mb-3">'
-                '<i class="fa fa-bar-chart text-primary"/> '
+                '<i class="fa fa-bar-chart text-primary" title="Chart"/> '
                 'Budget vs Actual by Department</h5>'
                 + ''.join(rows)
                 + '</div>'
@@ -295,7 +295,7 @@ class ElksBudget(models.Model):
             if not rec.line_ids:
                 rec.pnl_html = (
                     '<div class="text-muted text-center p-4">'
-                    '<i class="fa fa-file-text-o fa-2x mb-2"/><br/>'
+                    '<i class="fa fa-file-text-o fa-2x mb-2" title="Document"/><br/>'
                     'No budget lines yet.</div>'
                 )
                 continue

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- Cash Bag Tag                                          -->
+    <!-- Small printable tag that goes inside (or attaches to)  -->
+    <!-- a personal till bag.  Identifies the bag, the carrier, -->
+    <!-- and the suggested starter total.                       -->
+    <!-- ===================================================== -->
+    <template id="cash_bag_tag_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <style>
+                            .bagtag { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 10px; }
+                            .bagtag .tag { border: 3px dashed #444; padding: 16px; max-width: 380px; margin: 30px auto; }
+                            .bagtag .tag h1 { margin: 0 0 8px 0; font-size: 22pt; letter-spacing: 2px; }
+                            .bagtag .tag h2 { margin: 0 0 12px 0; font-size: 14pt; color: #555; }
+                            .bagtag .tag .meta { margin: 8px 0; font-size: 11pt; }
+                            .bagtag .tag .meta .label { color: #555; display: inline-block; width: 110px; }
+                            .bagtag .tag .starter { margin-top: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px; }
+                            .bagtag .tag .starter ul { margin: 4px 0 0 0; padding-left: 18px; font-size: 10pt; }
+                            .bagtag .tag .footer { margin-top: 14px; font-size: 9pt; color: #777; text-align: center; }
+                        </style>
+
+                        <div class="bagtag">
+                            <div class="tag">
+                                <h1 t-out="o.code or 'BAG'"/>
+                                <h2 t-out="o.name or ''"/>
+
+                                <div class="meta">
+                                    <span class="label">Type:</span>
+                                    <strong>
+                                        <t t-out="dict(o._fields['location_type'].selection).get(o.location_type, '')"/>
+                                    </strong>
+                                </div>
+                                <div class="meta" t-if="o.assigned_to_id">
+                                    <span class="label">Assigned to:</span>
+                                    <strong t-out="o.assigned_to_id.name"/>
+                                </div>
+                                <div class="meta" t-if="o.event_date">
+                                    <span class="label">Event date:</span>
+                                    <strong t-out="o.event_date.strftime('%Y-%m-%d')"/>
+                                </div>
+
+                                <div class="starter" t-if="o.starter_total &gt; 0">
+                                    <strong>Suggested Starter:
+                                        <t t-out="'$ %.2f' % o.starter_total"/>
+                                    </strong>
+                                    <ul>
+                                        <li t-if="o.starter_hundreds">
+                                            <t t-out="o.starter_hundreds"/>× $100
+                                        </li>
+                                        <li t-if="o.starter_fifties">
+                                            <t t-out="o.starter_fifties"/>× $50
+                                        </li>
+                                        <li t-if="o.starter_twenties">
+                                            <t t-out="o.starter_twenties"/>× $20
+                                        </li>
+                                        <li t-if="o.starter_tens">
+                                            <t t-out="o.starter_tens"/>× $10
+                                        </li>
+                                        <li t-if="o.starter_fives">
+                                            <t t-out="o.starter_fives"/>× $5
+                                        </li>
+                                        <li t-if="o.starter_twos">
+                                            <t t-out="o.starter_twos"/>× $2
+                                        </li>
+                                        <li t-if="o.starter_ones">
+                                            <t t-out="o.starter_ones"/>× $1
+                                        </li>
+                                        <li t-if="o.starter_dollar_coins">
+                                            <t t-out="o.starter_dollar_coins"/>× $1 coin
+                                        </li>
+                                        <li t-if="o.starter_half_dollars">
+                                            <t t-out="o.starter_half_dollars"/>× 50¢
+                                        </li>
+                                        <li t-if="o.starter_quarters">
+                                            <t t-out="o.starter_quarters"/>× 25¢
+                                        </li>
+                                        <li t-if="o.starter_dimes">
+                                            <t t-out="o.starter_dimes"/>× 10¢
+                                        </li>
+                                        <li t-if="o.starter_nickels">
+                                            <t t-out="o.starter_nickels"/>× 5¢
+                                        </li>
+                                        <li t-if="o.starter_pennies">
+                                            <t t-out="o.starter_pennies"/>× 1¢
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="footer">
+                                    Property of the Lodge.  Return to the Bank at end of shift.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

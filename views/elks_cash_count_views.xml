@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================== -->
+    <!-- Cash Count — List                                   -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_count_list" model="ir.ui.view">
+        <field name="name">elks.cash.count.list</field>
+        <field name="model">elks.cash.count</field>
+        <field name="arch" type="xml">
+            <list string="Cash Counts"
+                  decoration-muted="state == 'cancelled'"
+                  decoration-success="state == 'done'">
+                <field name="slip_number"/>
+                <field name="count_date"/>
+                <field name="location_id"/>
+                <field name="count_type"/>
+                <field name="counted_by_id"/>
+                <field name="witnessed_by_id" optional="hide"/>
+                <field name="total_bills" optional="show"/>
+                <field name="total_coins" optional="show"/>
+                <field name="total_cash" sum="Total Cash"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'done'"
+                       decoration-muted="state == 'cancelled'"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Count — Form (matches the reference picture)   -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_count_form" model="ir.ui.view">
+        <field name="name">elks.cash.count.form</field>
+        <field name="model">elks.cash.count</field>
+        <field name="arch" type="xml">
+            <form string="Cash Count">
+                <header>
+                    <button name="action_done"
+                            type="object"
+                            string="Mark Done"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft"
+                            type="object"
+                            string="Reset to Draft"
+                            class="btn-secondary"
+                            invisible="state == 'draft'"/>
+                    <button name="action_cancel"
+                            type="object"
+                            string="Cancel"
+                            class="btn-secondary"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_print_count_slip"
+                            type="object"
+                            string="Print Slip"
+                            class="btn-secondary"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="slip_number" class="oe_edit_only"/>
+                        <h1>
+                            <field name="slip_number" placeholder="auto-generated"/>
+                        </h1>
+                        <h3 class="text-muted">
+                            <field name="name" readonly="1" nolabel="1"/>
+                        </h3>
+                    </div>
+
+                    <group>
+                        <group string="Location &amp; Date">
+                            <field name="location_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="location_type" invisible="1"/>
+                            <field name="is_bank" invisible="1"/>
+                            <field name="count_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="count_type"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group string="People">
+                            <field name="counted_by_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="witnessed_by_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+
+                    <!-- The slip layout: bills left, coins right, totals at bottom -->
+                    <group string="Cash Count">
+                        <group string="BILLS">
+                            <label for="qty_hundreds" string="$100"/>
+                            <div class="o_row">
+                                <field name="qty_hundreds" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $100 =</span>
+                                <field name="sub_hundreds" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_fifties" string="$50"/>
+                            <div class="o_row">
+                                <field name="qty_fifties" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $50 =</span>
+                                <field name="sub_fifties" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_twenties" string="$20"/>
+                            <div class="o_row">
+                                <field name="qty_twenties" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $20 =</span>
+                                <field name="sub_twenties" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_tens" string="$10"/>
+                            <div class="o_row">
+                                <field name="qty_tens" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $10 =</span>
+                                <field name="sub_tens" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_fives" string="$5"/>
+                            <div class="o_row">
+                                <field name="qty_fives" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $5 =</span>
+                                <field name="sub_fives" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_twos" string="$2"/>
+                            <div class="o_row">
+                                <field name="qty_twos" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $2 =</span>
+                                <field name="sub_twos" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_ones" string="$1"/>
+                            <div class="o_row">
+                                <field name="qty_ones" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $1 =</span>
+                                <field name="sub_ones" nolabel="1" readonly="1"/>
+                            </div>
+                            <separator/>
+                            <field name="total_bills" readonly="1"/>
+                        </group>
+                        <group string="COINS">
+                            <label for="qty_dollar_coins" string="$1 coin"/>
+                            <div class="o_row">
+                                <field name="qty_dollar_coins" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $1.00 =</span>
+                                <field name="sub_dollar_coins" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_half_dollars" string="50¢"/>
+                            <div class="o_row">
+                                <field name="qty_half_dollars" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $0.50 =</span>
+                                <field name="sub_half_dollars" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_quarters" string="25¢"/>
+                            <div class="o_row">
+                                <field name="qty_quarters" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $0.25 =</span>
+                                <field name="sub_quarters" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_dimes" string="10¢"/>
+                            <div class="o_row">
+                                <field name="qty_dimes" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $0.10 =</span>
+                                <field name="sub_dimes" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_nickels" string="5¢"/>
+                            <div class="o_row">
+                                <field name="qty_nickels" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $0.05 =</span>
+                                <field name="sub_nickels" nolabel="1" readonly="1"/>
+                            </div>
+                            <label for="qty_pennies" string="1¢"/>
+                            <div class="o_row">
+                                <field name="qty_pennies" nolabel="1"
+                                       readonly="state != 'draft'"/>
+                                <span>× $0.01 =</span>
+                                <field name="sub_pennies" nolabel="1" readonly="1"/>
+                            </div>
+                            <separator/>
+                            <field name="total_coins" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="total_cash" readonly="1" class="oe_subtotal_footer_separator"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"
+                               placeholder="Anything to note about this count..."/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Count — Graph (trend over time)                -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_count_graph" model="ir.ui.view">
+        <field name="name">elks.cash.count.graph</field>
+        <field name="model">elks.cash.count</field>
+        <field name="arch" type="xml">
+            <graph string="Cash Counts" type="line" sample="1">
+                <field name="count_date" interval="week"/>
+                <field name="total_cash" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Count — Pivot                                  -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_count_pivot" model="ir.ui.view">
+        <field name="name">elks.cash.count.pivot</field>
+        <field name="model">elks.cash.count</field>
+        <field name="arch" type="xml">
+            <pivot string="Cash Counts">
+                <field name="location_id" type="row"/>
+                <field name="count_date" interval="month" type="col"/>
+                <field name="total_cash" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Cash Count — Search                                 -->
+    <!-- ================================================== -->
+    <record id="view_elks_cash_count_search" model="ir.ui.view">
+        <field name="name">elks.cash.count.search</field>
+        <field name="model">elks.cash.count</field>
+        <field name="arch" type="xml">
+            <search string="Cash Counts">
+                <field name="slip_number"/>
+                <field name="location_id"/>
+                <field name="counted_by_id"/>
+                <separator/>
+                <filter string="Draft" name="filter_draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter string="Done" name="filter_done"
+                        domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter string="Bank Counts" name="filter_bank"
+                        domain="[('is_bank', '=', True)]"/>
+                <filter string="Shift Closes" name="filter_shift_close"
+                        domain="[('count_type', '=', 'shift_close')]"/>
+                <filter string="Weekly Bank" name="filter_weekly_bank"
+                        domain="[('count_type', '=', 'weekly_bank')]"/>
+                <separator/>
+                <filter string="This Week" name="filter_this_week"
+                        domain="[('count_date', '&gt;=', (context_today() + relativedelta(weeks=-1)).strftime('%Y-%m-%d'))]"/>
+                <filter string="This Month" name="filter_this_month"
+                        domain="[('count_date', '&gt;=', (context_today().replace(day=1)).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <!-- Odoo 19: group-by filters live flat under <search>. -->
+                <filter string="Location" name="group_location"
+                        context="{'group_by': 'location_id'}"/>
+                <filter string="Count Type" name="group_type"
+                        context="{'group_by': 'count_type'}"/>
+                <filter string="Counted By" name="group_counted_by"
+                        context="{'group_by': 'counted_by_id'}"/>
+                <filter string="Week" name="group_week"
+                        context="{'group_by': 'count_date:week'}"/>
+                <filter string="Month" name="group_month"
+                        context="{'group_by': 'count_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================== -->
+    <!-- Action                                              -->
+    <!-- ================================================== -->
+    <record id="action_elks_cash_count" model="ir.actions.act_window">
+        <field name="name">Cash Counts</field>
+        <field name="res_model">elks.cash.count</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+        <field name="search_view_id" ref="view_elks_cash_count_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Record a cash count
+            </p>
+            <p>
+                Print a blank slip, hand-count, then enter the totals here.
+                Counts are the only required digital record in the cash workflow.
+            </p>
+        </field>
+    </record>
+
+</odoo>
