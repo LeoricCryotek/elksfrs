@@ -20,6 +20,14 @@ class ElksLodgeSettings(models.Model):
         "Lodge Number", required=True, index=True,
         help="Numeric lodge number used in FRS CSV submissions.",
     )
+    lodge_charter_date = fields.Date(
+        "Lodge Charter / Institution Date",
+        help="Date this lodge was chartered / instituted (the date the "
+             "lodge opened).\n\n"
+             "Used by companion modules (e.g. the newsletter builder) to "
+             "compute masthead numbering: Volume = years since charter, "
+             "No. = month of issue.",
+    )
 
     # Branding / logos
     logo_primary = fields.Binary(

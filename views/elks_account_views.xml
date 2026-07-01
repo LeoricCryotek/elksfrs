@@ -143,6 +143,7 @@
                     <group>
                         <group string="Lodge Information">
                             <field name="lodge_number"/>
+                            <field name="lodge_charter_date"/>
                             <field name="state_association"/>
                             <field name="district"/>
                             <field name="area"/>

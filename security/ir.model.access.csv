@@ -13,6 +13,7 @@ access_elks_budget_user,elks.budget.user,model_elks_budget,group_elksfrs_user,1,
 access_elks_budget_manager,elks.budget.manager,model_elks_budget,group_elksfrs_manager,1,1,1,1
 access_elks_budget_line_user,elks.budget.line.user,model_elks_budget_line,group_elksfrs_user,1,0,0,0
 access_elks_budget_line_manager,elks.budget.line.manager,model_elks_budget_line,group_elksfrs_manager,1,1,1,1
+access_elks_lodge_settings_all,elks.lodge.settings.all,model_elks_lodge_settings,base.group_user,1,0,0,0
 access_elks_lodge_settings_user,elks.lodge.settings.user,model_elks_lodge_settings,group_elksfrs_user,1,0,0,0
 access_elks_lodge_settings_manager,elks.lodge.settings.manager,model_elks_lodge_settings,group_elksfrs_manager,1,1,1,1
 access_frs_export_wizard_manager,frs.export.wizard.manager,model_frs_export_wizard,group_elksfrs_manager,1,1,1,1
