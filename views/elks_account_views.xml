@@ -154,6 +154,8 @@
                             <field name="lodge_zip" placeholder="83501"/>
                             <field name="lodge_phone" widget="phone"
                                    placeholder="(208) 743-5560"/>
+                            <field name="lodge_website" widget="url"
+                                   placeholder="https://lewistonelks896.com"/>
                         </group>
                         <group string="Accounting">
                             <field name="accounting_basis"/>
@@ -166,19 +168,20 @@
                         <group>
                             <field name="logo_primary" widget="image"
                                    options="{'size': [200, 200]}"/>
-                            <label for="logo_primary" string="Primary Logo (Elks USA)"/>
-                        </group>
-                        <group>
                             <field name="logo_lodge" widget="image"
                                    options="{'size': [200, 200]}"/>
-                            <label for="logo_lodge" string="Lodge Logo"/>
                         </group>
                         <group>
+                            <field name="logo_lodge_bw" widget="image"
+                                   options="{'size': [200, 200]}"/>
                             <field name="officer_poster_emblem" widget="image"
                                    options="{'size': [200, 200]}"/>
-                            <label for="officer_poster_emblem"
-                                   string="Officer Poster Emblem (optional)"/>
                         </group>
+                    </group>
+                    <group string="Lodge Photography">
+                        <field name="lodge_building_entry" widget="image"
+                               options="{'size': [480, 320]}"
+                               nolabel="0"/>
                     </group>
                     <group string="Tax Information">
                         <field name="tax_classification"/>

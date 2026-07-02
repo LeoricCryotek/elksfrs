@@ -38,13 +38,32 @@ class ElksLodgeSettings(models.Model):
     logo_lodge = fields.Binary(
         "Lodge Logo",
         help="Lodge-specific logo (e.g. Elks #896). "
-             "Shown alongside the primary logo on reports.",
+             "Shown alongside the primary logo on reports and used as the "
+             "masthead logo in the newsletter.",
+    )
+    logo_lodge_bw = fields.Binary(
+        "Lodge Logo — B&W Variant",
+        help="Black-and-white / monochrome version of the lodge logo. "
+             "Used automatically for grayscale printing, faxes, low-toner "
+             "copy runs, and any newsletter section rendered without color. "
+             "Recommended: high-contrast PNG or SVG-rasterized-to-PNG, at "
+             "least 300px wide, pure black on transparent background.",
     )
     officer_poster_emblem = fields.Binary(
         "Officer Poster Emblem",
         help="Emblem used on the large-format Officer Photo Poster "
              "(top-left corner). If left blank the Lodge Logo is used. "
              "Recommended: square PNG, at least 400px.",
+    )
+    lodge_building_entry = fields.Binary(
+        "Lodge Building Entry Photo",
+        help="Photo of the lodge building's main entry / façade. "
+             "Shown on the newsletter, website landing pages, printed "
+             "membership packets, event invitations, and anywhere a "
+             "recognizable image of the physical lodge is useful.\n\n"
+             "Recommended: landscape orientation, at least 1200px wide, "
+             "JPEG or PNG. Take the shot during daylight with the marquee "
+             "or lodge sign clearly visible.",
     )
     state_association = fields.Char("State Association")
     district = fields.Char("District")
@@ -82,6 +101,13 @@ class ElksLodgeSettings(models.Model):
     ], string="State")
     lodge_zip = fields.Char("ZIP Code")
     lodge_phone = fields.Char("Lodge Phone")
+    lodge_website = fields.Char(
+        "Lodge Website",
+        help="Public URL for the lodge (e.g. https://lewistonelks896.com). "
+             "Shown on the newsletter masthead / footer, receipts, event "
+             "invitations, and public pages. Include the scheme "
+             "(http:// or https://) so links render correctly.",
+    )
 
     # Accounting preferences
     accounting_basis = fields.Selection([
