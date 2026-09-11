@@ -34,6 +34,7 @@ PAYMENT_TYPES = [
     ('one_year_life', 'Life Member Dues Payment'),
     ('six_months', 'Six Months Dues Payment'),
     ('prorated', 'Pro-Rated Dues Payment'),
+    ('catch_up', 'Catch-Up Dues (Multi-Year)'),
     ('custom', 'Custom / Misc. Payment'),
 ]
 
@@ -230,6 +231,71 @@ class ElksDuesPayment(models.Model):
         compute="_compute_amount_total", store=True,
     )
 
+    # --- Multi-year catch-up support ---
+    # When a member is more than a year behind, a plain "One Year"
+    # payment leaves them still delinquent. These fields expose that
+    # gap on the payment form so reception can pick the Catch-Up
+    # payment type (or accept the amount owed) without doing lodge-
+    # year math in their head.
+    x_years_behind = fields.Integer(
+        "Lodge Years Behind",
+        compute="_compute_years_behind",
+        help="How many complete lodge years (Apr 1–Mar 31) of dues "
+             "the member still owes to be current through the end "
+             "of THIS lodge year. 0 means they're paid up.",
+    )
+    x_catch_up_warning = fields.Html(
+        "Catch-Up Warning",
+        compute="_compute_years_behind", sanitize=False,
+    )
+
+    @api.depends('partner_id', 'partner_id.x_detail_dues_paid_to_date',
+                 'payment_date')
+    def _compute_years_behind(self):
+        import datetime
+        from dateutil.relativedelta import relativedelta
+        for rec in self:
+            partner = rec.partner_id
+            if not partner:
+                rec.x_years_behind = 0
+                rec.x_catch_up_warning = ''
+                continue
+            today = rec.payment_date or fields.Date.context_today(rec)
+            # Current lodge year runs Apr 1 → next Mar 31.
+            if today.month >= 4:
+                current_end = datetime.date(today.year + 1, 3, 31)
+            else:
+                current_end = datetime.date(today.year, 3, 31)
+            paid_to = partner.x_detail_dues_paid_to_date
+            if not paid_to or paid_to >= current_end:
+                rec.x_years_behind = 0
+                rec.x_catch_up_warning = ''
+                continue
+            # Round UP the whole-year gap so a member whose dues
+            # lapsed mid-year still needs a full year to catch up.
+            gap = relativedelta(current_end, paid_to)
+            months = gap.years * 12 + gap.months
+            years = max(1, (months + 11) // 12)
+            rec.x_years_behind = years
+            if years >= 2:
+                rec.x_catch_up_warning = (
+                    '<div style="padding:6px 10px;background:#fff3cd;'
+                    'border-left:4px solid #f0ad4e;color:#664d03;">'
+                    '<b>%s is %d lodge years behind on dues.</b> '
+                    'A one-year payment will still leave them '
+                    'delinquent. Consider changing Payment Type to '
+                    '<i>Catch-Up Dues (Multi-Year)</i> to bill for '
+                    'all %d years at once and bring them current '
+                    'through %s.'
+                    '</div>' % (
+                        partner.name or 'This member',
+                        years, years,
+                        current_end.strftime('%b %d, %Y'),
+                    )
+                )
+            else:
+                rec.x_catch_up_warning = ''
+
     @api.depends("partner_id", "payment_type", "payment_date")
     def _compute_name(self):
         for rec in self:
@@ -297,16 +363,24 @@ class ElksDuesPayment(models.Model):
 
         # --- Determine member type & bundle flag ---
         is_prorated = self.payment_type == 'prorated'
+        # Catch-Up = one-year bundle multiplied by the number of
+        # lodge years the member is behind (computed by
+        # _compute_years_behind). Falls back to a single year if the
+        # member's paid-to date is not yet set.
+        is_catch_up = self.payment_type == 'catch_up'
+        catch_up_years = max(1, self.x_years_behind or 1) if is_catch_up else 1
 
         if self.payment_type == 'one_year_life':
             member_type = 'life'
             bundle_field = 'include_in_one_year'
             months = 12
-        elif self.payment_type in ('one_year', 'prorated'):
-            # Pro-rated uses the same one-year bundle, then scales amounts
+        elif self.payment_type in ('one_year', 'prorated', 'catch_up'):
+            # Pro-rated + Catch-Up reuse the one-year bundle. Pro-rated
+            # then scales down for partial year; Catch-Up scales up by
+            # years_behind.
             member_type = self._get_member_type()
             bundle_field = 'include_in_one_year'
-            months = 12
+            months = 12 * catch_up_years
         else:  # six_months
             member_type = 'regular'
             bundle_field = 'include_in_six_months'
@@ -343,15 +417,25 @@ class ElksDuesPayment(models.Model):
             rates = dues_rates | fee_rates
 
         # --- Build lines (amounts come directly from rate records) ---
+        # For Catch-Up, dues lines are multiplied by the number of
+        # years behind so the total captures every missed year. One-
+        # off fees (non-dues rates) are NOT multiplied — you don't
+        # pay the initiation fee twice for two lost years.
         lines = []
         seq = 10
         for rate in rates:
+            amt = rate.amount
+            label = rate.name
+            if is_catch_up and rate.is_dues and catch_up_years > 1:
+                amt = rate.amount * catch_up_years
+                label = "%s × %d years (catch-up)" % (
+                    rate.name, catch_up_years)
             lines.append((0, 0, {
                 'sequence': seq,
                 'rate_id': rate.id,
-                'description': rate.name,
-                'default_amount': rate.amount,
-                'amount_paid': rate.amount,
+                'description': label,
+                'default_amount': amt,
+                'amount_paid': amt,
                 'lodge_assisted': False,
             }))
             seq += 10
@@ -817,6 +901,16 @@ class ElksDuesPayment(models.Model):
         partner = payment.partner_id
         current_date = partner.x_detail_dues_paid_to_date
         months = rate.months_covered
+
+        # Catch-Up multi-year: multiply months by the number of years
+        # the member was behind at payment time (snapshotted on the
+        # payment via x_years_behind). Without this, the dues line
+        # only advances a single year even though the amount charged
+        # covered several — leaving the member technically still
+        # delinquent right after paying their catch-up bill.
+        if payment.payment_type == 'catch_up':
+            catch_up = max(1, payment.x_years_behind or 1)
+            months = months * catch_up
 
         if current_date:
             # Start from the day AFTER current paid-to (the next due date)
