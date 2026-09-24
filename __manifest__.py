@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Elks FRS - Financial Reporting System",
-    "version": "19.0.2.0",
+    "version": "19.0.2.1",
     "category": "Accounting",
     "summary": "Elks Lodge General Ledger, Chart of Accounts, Dues Processing, and FRS CSV exports",
     "description": """
@@ -47,6 +47,7 @@ Features:
         "wizard/process_paid_members_wizard_views.xml",
         "wizard/qb_pnl_reconcile_wizard_views.xml",
         "wizard/clms_payment_import_wizard_views.xml",
+        "wizard/qb_coa_import_wizard_views.xml",
         "views/elks_budget_amendment_views.xml",
         "views/elks_account_views.xml",
         "views/elks_journal_views.xml",

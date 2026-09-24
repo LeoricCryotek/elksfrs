@@ -117,6 +117,37 @@ class ElksLodgeSettings(models.Model):
         help="Per the AA Manual, cash basis is NOT permitted.",
     )
 
+    # ------------------------------------------------------------------
+    # GL account codes used by the Cash Management module.
+    #
+    # Defaults match the canonical Uniform Chart of Accounts from the
+    # Grand Lodge AA Manual, so a fresh install works out of the box on
+    # any lodge that follows the standard.  Lodges with a custom CoA
+    # (e.g. Lewiston uses 10101 for cash on hand and 10201 for the
+    # operating checking) override these to point at their own accounts.
+    # ------------------------------------------------------------------
+    default_cash_gl_code = fields.Char(
+        "Cash on Hand GL Code",
+        default='10000',
+        required=True,
+        help="GL account code representing physical cash held in the safe / "
+             "petty cash. Used as the credit side of the Monday Bank Deposit "
+             "journal entry, and as the debit side of Bank Stock-Up.\n\n"
+             "Uniform CoA default: 10000 (Petty Cash).\n"
+             "Lewiston Lodge uses: 10101 (Cash on Hand General).",
+    )
+    default_checking_gl_code = fields.Char(
+        "Operating Checking GL Code",
+        default='10100',
+        required=True,
+        help="GL account code representing the operating checking account "
+             "where the Monday deposit lands. Used as the debit side of "
+             "the Bank Deposit journal entry, and as the credit side of "
+             "Bank Stock-Up (change buy).\n\n"
+             "Uniform CoA default: 10100 (Operating Checking Account).\n"
+             "Lewiston Lodge uses: 10201 (S18 Non-Profit Checking).",
+    )
+
     # FRS submission email
     frs_email = fields.Char(
         "FRS Submission Email",

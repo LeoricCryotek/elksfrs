@@ -162,6 +162,9 @@
                             <field name="fiscal_year_start_month"/>
                             <field name="fiscal_year_start_day"/>
                             <field name="closing_method"/>
+                            <separator string="Cash Management GL Codes"/>
+                            <field name="default_cash_gl_code"/>
+                            <field name="default_checking_gl_code"/>
                         </group>
                     </group>
                     <group string="Lodge Branding">

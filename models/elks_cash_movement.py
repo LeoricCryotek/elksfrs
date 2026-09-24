@@ -24,11 +24,13 @@ from odoo.exceptions import ValidationError, UserError
 from .elks_cash_location import DENOM_NAMES, DENOM_FACE
 
 
-# Code of the GL account representing physical cash in the safe.
-# 10000 = Petty Cash in the canonical Elks COA.
-_BANK_GL_CODE = '10000'
-# 10100 = Operating Checking Account.
-_CHECKING_GL_CODE = '10100'
+# Fallback GL account codes used when Lodge Settings hasn't been
+# configured (fresh install with no settings record yet).  These match
+# the canonical Uniform CoA from the Grand Lodge AA Manual.  Live lodges
+# override these via elks.lodge.settings.default_cash_gl_code and
+# default_checking_gl_code — see _get_gl_codes() below.
+_DEFAULT_BANK_GL_CODE = '10000'      # Petty Cash (Uniform CoA)
+_DEFAULT_CHECKING_GL_CODE = '10100'  # Operating Checking (Uniform CoA)
 
 
 class ElksCashMovement(models.Model):
@@ -198,14 +200,31 @@ class ElksCashMovement(models.Model):
             rec.posts_journal = rec.movement_type in ('bank_deposit',
                                                       'bank_stock')
 
+    @api.model
+    def _get_gl_codes(self):
+        """Return the (cash_code, checking_code) pair configured on Lodge Settings.
+
+        Falls back to the Uniform CoA defaults (10000 / 10100) if no
+        settings record exists yet — this makes fresh installs work
+        before the user has opened Lodge Settings for the first time.
+        """
+        settings = self.env['elks.lodge.settings'].sudo().search([], limit=1)
+        if settings:
+            return (
+                settings.default_cash_gl_code or _DEFAULT_BANK_GL_CODE,
+                settings.default_checking_gl_code or _DEFAULT_CHECKING_GL_CODE,
+            )
+        return (_DEFAULT_BANK_GL_CODE, _DEFAULT_CHECKING_GL_CODE)
+
     @api.depends('movement_type')
     def _compute_gl_accounts(self):
+        _cash, checking = self._get_gl_codes()
         for rec in self:
             if rec.movement_type == 'bank_deposit':
                 rec.from_account_code = False
-                rec.to_account_code = _CHECKING_GL_CODE
+                rec.to_account_code = checking
             elif rec.movement_type == 'bank_stock':
-                rec.from_account_code = _CHECKING_GL_CODE
+                rec.from_account_code = checking
                 rec.to_account_code = False
             else:
                 rec.from_account_code = False
@@ -349,21 +368,32 @@ class ElksCashMovement(models.Model):
     def _create_journal_entry(self):
         """Create the GL journal entry for bank_deposit / bank_stock.
 
-        bank_deposit: Dr 10100 Operating Checking / Cr 10000 Petty Cash
-        bank_stock:   Dr 10000 Petty Cash         / Cr 10100 Operating Checking
+        bank_deposit: Dr <checking> / Cr <cash>       (usually 10100 / 10000)
+        bank_stock:   Dr <cash>     / Cr <checking>   (usually 10000 / 10100)
+
+        Actual code values come from elks.lodge.settings so lodges with a
+        custom CoA (e.g. Lewiston's 10101 / 10201) can retarget without
+        editing this file.
         """
         self.ensure_one()
         Account = self.env['elks.account']
-        bank_acct = Account.search([('code', '=', _BANK_GL_CODE)], limit=1)
-        check_acct = Account.search([('code', '=', _CHECKING_GL_CODE)], limit=1)
+        cash_code, checking_code = self._get_gl_codes()
+        bank_acct = Account.search([('code', '=', cash_code)], limit=1)
+        check_acct = Account.search([('code', '=', checking_code)], limit=1)
         if not bank_acct:
             raise UserError(_(
-                "GL account %s (Petty Cash / Bank) not found in the Chart of "
-                "Accounts.", _BANK_GL_CODE))
+                "GL account %s (configured as Cash on Hand in Lodge "
+                "Settings) not found in the Chart of Accounts.\n\n"
+                "Either import your Chart of Accounts, or update the "
+                "Cash on Hand GL Code in Lodge Settings to an account "
+                "that exists.", cash_code))
         if not check_acct:
             raise UserError(_(
-                "GL account %s (Operating Checking) not found in the Chart "
-                "of Accounts.", _CHECKING_GL_CODE))
+                "GL account %s (configured as Operating Checking in "
+                "Lodge Settings) not found in the Chart of Accounts.\n\n"
+                "Either import your Chart of Accounts, or update the "
+                "Operating Checking GL Code in Lodge Settings to an "
+                "account that exists.", checking_code))
 
         amount = self.total_amount
         memo = self._journal_entry_memo()

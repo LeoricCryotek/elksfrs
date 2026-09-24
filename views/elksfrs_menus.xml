@@ -185,6 +185,12 @@
               action="action_clms_payment_import_wizard"
               sequence="30"/>
 
+    <menuitem id="menu_elksfrs_import_qb_coa"
+              name="Import Chart of Accounts (QB CSV)"
+              parent="menu_elksfrs_import"
+              action="action_qb_coa_import_wizard"
+              sequence="5"/>
+
     <!-- ===== Configuration ===== -->
     <menuitem id="menu_elksfrs_config"
               name="Configuration"

@@ -55,6 +55,15 @@ class ElksAccount(models.Model):
         "Sub-Account", size=2,
         help="Optional 2-character sub-account suffix.",
     )
+    elks_standard_code = fields.Char(
+        "Elks Standard GL Code",
+        help="The Uniform CoA code (per Grand Lodge AA Manual) that "
+             "corresponds to this local account. Populated by the FRS "
+             "Mapping File exporter — required only when the local "
+             "`code` differs from the Uniform CoA (e.g. Lewiston uses "
+             "10101 locally which maps to Elks Standard 10000).\n\n"
+             "Leave blank when the local code matches the Uniform CoA.",
+    )
     name = fields.Char("Account Name", required=True, index=True)
     account_type = fields.Selection(
         ACCOUNT_TYPES, string="Type", required=True, index=True,

@@ -41,6 +41,7 @@ access_elks_budget_amendment_line_manager,elks.budget.amendment.line.manager,mod
 access_process_paid_members_wizard_manager,process.paid.members.wizard.manager,model_process_paid_members_wizard,group_elksfrs_manager,1,1,1,1
 access_qb_pnl_reconcile_wizard_manager,qb.pnl.reconcile.wizard.manager,model_qb_pnl_reconcile_wizard,group_elksfrs_manager,1,1,1,1
 access_clms_payment_import_wizard_manager,clms.payment.import.wizard.manager,model_clms_payment_import_wizard,group_elksfrs_manager,1,1,1,1
+access_qb_coa_import_wizard_manager,qb.coa.import.wizard.manager,model_qb_coa_import_wizard,group_elksfrs_manager,1,1,1,1
 access_elks_cash_location_user,elks.cash.location.user,model_elks_cash_location,group_elksfrs_user,1,0,0,0
 access_elks_cash_location_manager,elks.cash.location.manager,model_elks_cash_location,group_elksfrs_manager,1,1,1,1
 access_elks_cash_count_user,elks.cash.count.user,model_elks_cash_count,group_elksfrs_user,1,1,1,0
