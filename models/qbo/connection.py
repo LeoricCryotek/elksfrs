@@ -1,4 +1,5 @@
 import secrets
+from psycopg2 import errors
 from datetime import timedelta
 from urllib.parse import urlencode
 
@@ -65,6 +66,10 @@ class Connection(models.Model):
                     'scope': 'com.intuit.quickbooks.accounting', 'redirect_uri': self.redirect_uri, 'state': state})}
 
     def write(self, vals):
+        admin_fields = {'realm_id', 'connected', 'expires_at', 'client_id', 'client_secret',
+                        'access_token', 'refresh_token', 'company_id', 'environment'}
+        if admin_fields.intersection(vals) and not self.env.is_system():
+            raise AccessError(_('Only administrators can change the QuickBooks connection identity or credentials.'))
         if 'start_date' in vals and any(rec.last_sync for rec in self):
             raise UserError(_('The import cutoff cannot change after the first successful pull.'))
         if set(vals) & {'company_id', 'environment'} and any(rec.realm_id for rec in self):
@@ -103,7 +108,13 @@ class Connection(models.Model):
 
     def _lock(self):
         self.ensure_one()
-        self.env.cr.execute('SELECT id FROM elks_qbo_connection WHERE id=%s FOR UPDATE NOWAIT', [self.id])
+        self.check_access('write')
+        self.flush_recordset()
+        try:
+            with self.env.cr.savepoint():
+                self.env.cr.execute('SELECT id FROM elks_qbo_connection WHERE id=%s FOR UPDATE NOWAIT', [self.id])
+        except errors.LockNotAvailable:
+            raise UserError(_('This QuickBooks connection is already syncing. Try again when it finishes.')) from None
         self.invalidate_recordset()
 
     def _query(self, entity, where=''):
@@ -111,6 +122,8 @@ class Connection(models.Model):
         if entity not in ('Account', 'Vendor', 'Purchase'):
             raise ValueError('Unsupported entity')
         conn = self.sudo()
+        if not self.realm_id or not self.realm_id.isdigit():
+            raise UserError(_('Reconnect QuickBooks: the company realm ID is invalid.'))
         if not conn.expires_at or conn.expires_at <= fields.Datetime.now() + timedelta(minutes=5):
             self._token({'grant_type': 'refresh_token', 'refresh_token': conn.refresh_token})
         host = 'sandbox-quickbooks.api.intuit.com' if self.environment == 'sandbox' else 'quickbooks.api.intuit.com'
@@ -123,7 +136,12 @@ class Connection(models.Model):
                                         'Authorization': 'Bearer ' + conn.access_token}, timeout=45)
                 if response.status_code != 200:
                     raise UserError(_('QuickBooks query failed (HTTP %s). Retry the pull.') % response.status_code)
-                rows = response.json().get('QueryResponse', {}).get(entity, [])
+                data = response.json()
+                if not isinstance(data, dict) or 'Fault' in data or not isinstance(data.get('QueryResponse'), dict):
+                    raise UserError(_('QuickBooks returned an invalid query response. No missing records were inferred.'))
+                rows = data['QueryResponse'].get(entity, [])
+                if not isinstance(rows, list) or any(not isinstance(row, dict) or not row.get('Id') for row in rows):
+                    raise UserError(_('QuickBooks returned invalid records. Retry the pull.'))
             except (requests.RequestException, ValueError):
                 raise UserError(_('QuickBooks query is unavailable or returned invalid data.')) from None
             yield from rows
@@ -158,7 +176,7 @@ class Connection(models.Model):
                 seen.add(str(row['Id']))
                 self.env['elks.qbo.expense']._upsert(self, row)
             missing = self.env['elks.qbo.expense'].search([('connection_id', '=', self.id), ('qbo_id', 'not in', list(seen))])
-            missing.write({'review_reason': 'No longer returned by QuickBooks in the configured date range. Review deletion, void, or date change.', 'source_missing': True})
+            missing._write_import({'review_reason': 'No longer returned by QuickBooks in the configured date range. Review deletion, void, or date change.', 'source_missing': True})
             self.write({'last_sync': fields.Datetime.now(), 'last_error': False})
         except UserError as exc:
             # Retain rotated OAuth credentials and imported rows for an idempotent retry.
@@ -187,9 +205,17 @@ class AccountMap(models.Model):
     def write(self, vals):
         if 'account_id' in vals:
             for rec in self:
-                if rec.account_id.id != vals['account_id'] and self.env['elks.qbo.expense'].search_count([
-                        ('connection_id', '=', rec.connection_id.id), ('journal_id', '!=', False)]):
-                    raise UserError(_('Account mappings cannot change after FRS recording. Use an audited migration.'))
+                if rec.account_id.id == vals['account_id']:
+                    continue
+                recorded = self.env['elks.qbo.expense'].search([
+                    ('connection_id', '=', rec.connection_id.id), ('journal_id', '!=', False)])
+                for expense in recorded:
+                    source = expense.payload or {}
+                    refs = {str(source.get('AccountRef', {}).get('value', ''))}
+                    refs.update(str(line.get('AccountBasedExpenseLineDetail', {}).get('AccountRef', {}).get('value', ''))
+                                for line in source.get('Line', []))
+                    if rec.qbo_id in refs:
+                        raise UserError(_('This account mapping is used by recorded expenses. Use an audited migration.'))
         return super().write(vals)
 
 
@@ -203,3 +229,12 @@ class VendorMap(models.Model):
     qbo_id = fields.Char(required=True, readonly=True)
     partner_id = fields.Many2one('res.partner', check_company=True)
     _unique = models.Constraint('UNIQUE(connection_id, qbo_id)', 'QuickBooks vendor already mapped.')
+
+    def write(self, vals):
+        if 'partner_id' in vals:
+            for rec in self:
+                if rec.partner_id.id != vals['partner_id'] and self.env['elks.qbo.expense'].search_count([
+                        ('connection_id', '=', rec.connection_id.id), ('vendor_qbo_id', '=', rec.qbo_id),
+                        '|', ('purchase_id', '!=', False), ('journal_id', '!=', False)]):
+                    raise UserError(_('This vendor mapping is used by matched or recorded expenses. Review the existing links before changing it.'))
+        return super().write(vals)

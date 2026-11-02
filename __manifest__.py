@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Elks FRS - Financial Reporting System",
-    "version": "19.0.3.0.1",
+    "version": "19.0.3.0.2",
     "category": "Accounting",
     "summary": "Elks Lodge General Ledger, Chart of Accounts, Dues Processing, and FRS CSV exports",
     "description": """

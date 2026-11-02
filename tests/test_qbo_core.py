@@ -17,5 +17,5 @@ class TestQBOCore(TransactionCase):
             self.skipTest('This case exercises FRS without the optional purchase workflow')
         conn = self.env['elks.qbo.connection'].create({})
         self.assertFalse(conn.purchase_workflow_available)
-        expense = self.env['elks.qbo.expense'].create({'connection_id': conn.id, 'name': 'Test', 'qbo_id': 'no-workflow'})
+        expense = self.env['elks.qbo.expense']._upsert(conn, {'Id': 'no-workflow', 'TxnDate': '2026-10-01', 'TotalAmt': 0})
         self.assertEqual(expense.state, 'review')

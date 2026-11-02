@@ -65,9 +65,11 @@ class ElksBudgetTransfer(models.Model):
         default=lambda self: self.env.user,
     )
 
-    @api.constrains("from_line_id", "to_line_id")
+    @api.constrains("budget_id", "from_line_id", "to_line_id")
     def _check_different_lines(self):
         for rec in self:
+            if any(line.budget_id != rec.budget_id for line in (rec.from_line_id | rec.to_line_id)):
+                raise ValidationError(_('Both transfer lines must belong to the selected budget.'))
             if rec.from_line_id and rec.to_line_id and rec.from_line_id == rec.to_line_id:
                 raise ValidationError(_(
                     "Source and destination budget lines must be different."

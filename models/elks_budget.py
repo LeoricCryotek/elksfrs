@@ -12,6 +12,7 @@ import csv
 import datetime
 import io
 import logging
+from markupsafe import escape
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
@@ -146,6 +147,38 @@ class ElksBudget(models.Model):
         help="FRS budget version identifier.",
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        if any(vals.get('state', 'draft') != 'draft' for vals in vals_list):
+            raise ValidationError(_('New budgets must start in draft and follow the approval workflow.'))
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if 'state' in vals:
+            self.check_access('write')
+            self.flush_recordset()
+            for rec in self.sorted('id'):
+                self.env.cr.execute('SELECT id FROM elks_budget WHERE id=%s FOR UPDATE', [rec.id])
+            self.invalidate_recordset()
+            transitions = {
+                'draft': {'board_pending'},
+                'board_pending': {'board_approved', 'rejected', 'draft'},
+                'board_approved': {'floor_pending', 'draft'},
+                'floor_pending': {'floor_approved', 'rejected', 'draft'},
+                'floor_approved': {'submitted', 'draft'},
+                'submitted': {'draft'},
+                'rejected': {'draft'},
+            }
+            for rec in self:
+                if vals['state'] != rec.state and vals['state'] not in transitions.get(rec.state, set()):
+                    raise ValidationError(_('Budget approval steps cannot be skipped.'))
+            if vals['state'] in ('board_pending', 'board_approved', 'floor_pending', 'floor_approved', 'submitted'):
+                self._validate_budget_for_approval()
+        result = super().write(vals)
+        if vals.get('state') in ('board_pending', 'board_approved', 'floor_pending', 'floor_approved', 'submitted'):
+            self._validate_budget_for_approval()
+        return result
+
     def _compute_amendment_counts(self):
         for rec in self:
             rec.transfer_count = len(rec.transfer_ids)
@@ -248,7 +281,7 @@ class ElksBudget(models.Model):
                 rows.append(f'''
                 <div class="mb-3">
                     <div class="d-flex justify-content-between mb-1">
-                        <strong class="small">{dept_name}</strong>
+                        <strong class="small">{escape(dept_name)}</strong>
                         <span class="small {var_class}">
                             {var_sign}${variance:,.0f}
                         </span>
@@ -370,7 +403,7 @@ class ElksBudget(models.Model):
                 # Department header
                 rows.append(
                     f'<tr class="pnl-dept"><td colspan="5">'
-                    f'{dept["name"]}</td></tr>'
+                    f'{escape(dept["name"])}</td></tr>'
                 )
 
                 dept_income_bud = dept_income_act = 0.0
@@ -385,8 +418,8 @@ class ElksBudget(models.Model):
                     for item in dept['income']:
                         rows.append(
                             f'<tr><td style="padding-left:30px;color:#666;">'
-                            f'{item["code"]}</td>'
-                            f'<td style="padding-left:20px;">{item["name"]}</td>'
+                            f'{escape(item["code"])}</td>'
+                            f'<td style="padding-left:20px;">{escape(item["name"])}</td>'
                             f'<td>{fmt(item["budget"])}</td>'
                             f'<td>{fmt(item["actual"])}</td>'
                             f'<td>{fmt_var(item["variance"])}</td></tr>'
@@ -413,8 +446,8 @@ class ElksBudget(models.Model):
                         over_cls = ' class="pnl-over"' if item['over'] else ''
                         rows.append(
                             f'<tr{over_cls}><td style="padding-left:30px;color:#666;">'
-                            f'{item["code"]}</td>'
-                            f'<td style="padding-left:20px;">{item["name"]}</td>'
+                            f'{escape(item["code"])}</td>'
+                            f'<td style="padding-left:20px;">{escape(item["name"])}</td>'
                             f'<td>{fmt(item["budget"])}</td>'
                             f'<td>{fmt(item["actual"])}</td>'
                             f'<td>{fmt_var(item["variance"])}</td></tr>'
@@ -438,7 +471,7 @@ class ElksBudget(models.Model):
                 net_cls = 'pnl-pos' if dept_net_act >= 0 else 'pnl-neg'
                 rows.append(
                     f'<tr style="background:#f0f4f8;"><td></td>'
-                    f'<td><strong>Net {dept["name"]}</strong></td>'
+                    f'<td><strong>Net {escape(dept["name"])}</strong></td>'
                     f'<td><strong>{fmt(dept_net_bud)}</strong></td>'
                     f'<td><strong><span class="{net_cls}">'
                     f'{fmt(dept_net_act)}</span></strong></td>'

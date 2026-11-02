@@ -75,3 +75,31 @@ class TestQBO(TransactionCase):
         expense = self._import()
         self.assertTrue(expense.review_reason)
         self.assertFalse(expense.purchase_id)
+
+    def test_approved_expense_records_once_and_locks_journal(self):
+        income = self.env['elks.account'].search([('account_type', '=', 'income'), ('is_header', '=', False)], limit=1)
+        budget = self.env['elks.budget'].create({'fiscal_year_end': '2027-03-31', 'line_ids': [
+            (0, 0, {'account_id': self.cost.id, 'amount': 100}),
+            (0, 0, {'account_id': income.id, 'amount': 100}),
+        ]})
+        budget.action_submit_board()
+        budget.action_board_approve()
+        budget.action_submit_floor()
+        budget.action_floor_approve()
+        expense = self._import()
+        expense.action_create_requisition()
+        po = expense.purchase_id
+        po.action_board_approve()
+        po.action_floor_approve()
+        # Dummy test signatures, not real officer authorizations.
+        po.write({'x_er_signature': 'dGVzdA==', 'x_treasurer_signature': 'dGVzdA==', 'x_secretary_signature': 'dGVzdA=='})
+        expense.action_record_frs()
+        journal = expense.journal_id
+        self.assertEqual(journal.state, 'posted')
+        self.assertTrue(journal.is_balanced)
+        self.assertEqual(journal.total_debit, 12.5)
+        self.assertEqual(po.order_line.x_journal_entry_id, journal)
+        expense.action_record_frs()
+        self.assertEqual(expense.journal_id, journal)
+        with self.assertRaises(UserError):
+            journal.action_draft()

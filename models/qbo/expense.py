@@ -45,6 +45,8 @@ class Expense(models.Model):
             raise AccessError(_('FRS manager access is required.'))
 
     def _lock(self):
+        self.check_access('write')
+        self.flush_recordset()
         for rec in self.sorted('id'):
             self.env.cr.execute('SELECT id FROM elks_qbo_expense WHERE id=%s FOR UPDATE', [rec.id])
         self.invalidate_recordset()
@@ -85,7 +87,20 @@ class Expense(models.Model):
             if po.currency_id != rec.currency_id:
                 raise ValidationError(_('The PO and expense must use the company currency.'))
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        raise AccessError(_('QuickBooks charges must be created by pulling data from QuickBooks.'))
+
+    def _write_import(self, vals):
+        # Private ORM entry point: not callable over RPC, and does not elevate ACLs.
+        return super().write(vals)
+
     def write(self, vals):
+        protected = {'partner_id', 'company_id', 'currency_id', 'name', 'connection_id', 'qbo_id', 'source_hash', 'payload',
+                     'date', 'amount', 'vendor_qbo_id', 'journal_id', 'review_reason',
+                     'source_missing', 'source_changed'}
+        if protected.intersection(vals):
+            raise AccessError(_('Imported source and accounting status may only be changed by the QuickBooks workflow.'))
         if 'purchase_id' in vals:
             self._manager()
             self._lock()
@@ -99,20 +114,20 @@ class Expense(models.Model):
         expense = self.search([('connection_id', '=', conn.id), ('qbo_id', '=', str(row['Id']))], limit=1)
         if expense and expense.source_hash == fingerprint:
             if expense.source_missing:
-                expense.write({'source_missing': False, 'review_reason': False})
+                expense._write_import({'source_missing': False, 'review_reason': False})
             expense._process()
             return expense
         if expense and (expense.journal_id or expense.purchase_id):
-            expense.write({'source_changed': True, 'review_reason': 'QuickBooks changed after PO matching or FRS recording. Review the source and correct with an audited adjustment; the original accounting is retained.'})
+            expense._write_import({'source_changed': True, 'review_reason': 'QuickBooks changed after PO matching or FRS recording. Review the source and correct with an audited adjustment; the original accounting is retained.'})
             return expense
         vals = {'name': 'QBO Purchase ' + str(row['Id']), 'payload': row, 'source_hash': fingerprint,
                 'vendor_qbo_id': str(row.get('EntityRef', {}).get('value', '')),
                 'date': row.get('TxnDate'), 'amount': row.get('TotalAmt', 0), 'source_missing': False,
                 'review_reason': False}
         if expense:
-            expense.write(vals)
+            expense._write_import(vals)
         else:
-            expense = self.create(dict(vals, connection_id=conn.id, qbo_id=str(row['Id'])))
+            expense = super().create(dict(vals, connection_id=conn.id, qbo_id=str(row['Id'])))
         expense._process()
         return expense
 
@@ -132,7 +147,7 @@ class Expense(models.Model):
                 if self.connection_id.auto_record and self.purchase_id.x_approval_state == 'approved' and self.purchase_id.x_all_officers_signed:
                     self.action_record_frs()
         except (UserError, ValueError) as exc:
-            self.review_reason = str(exc)
+            self._write_import({'review_reason': str(exc)})
 
     def _accounting_lines(self):
         self.ensure_one()
@@ -169,7 +184,7 @@ class Expense(models.Model):
             rec._accounting_lines()
             if not rec.partner_id:
                 raise UserError(_('Map the vendor first.'))
-            rec.review_reason = False
+            rec._write_import({'review_reason': False})
             if rec.connection_id.auto_requisition:
                 rec.action_prepare_purchase()
 
@@ -209,7 +224,7 @@ class Expense(models.Model):
                 rec.purchase_id = compatible.id
                 rec.message_post(body=_('Matched an existing PO by vendor, currency, total, and FRS account allocation.'))
             elif candidates:
-                rec.review_reason = _('Existing vendor requisitions or POs need review. Select the matching PO or explicitly create a new requisition.')
+                rec._write_import({'review_reason': _('Existing vendor requisitions or POs need review. Select the matching PO or explicitly create a new requisition.')})
             else:
                 rec.action_create_requisition()
 
@@ -236,7 +251,7 @@ class Expense(models.Model):
             rec.purchase_id = po
             po.message_post(body=_('This charge has already been recorded in QuickBooks. Retrospective approval is required; do not pay it again.'))
             po.action_submit()
-            rec.review_reason = False
+            rec._write_import({'review_reason': False})
 
     def action_record_frs(self):
         self._manager()
@@ -252,10 +267,16 @@ class Expense(models.Model):
                 raise UserError(_('FRS posting is limited to single-company databases until the base FRS ledger supports company isolation.'))
             lines, payment = rec._accounting_lines()
             po = rec.purchase_id
-            if not po or po.x_approval_state != 'approved' or not po.x_all_officers_signed or po.state == 'cancel':
-                raise UserError(_('Board/Floor approval and all officer signatures are required.'))
-            # Serialize different charges attempting to consume the same PO.
+            if not po:
+                raise UserError(_('Select a purchase order before recording.'))
+            # Re-read approval and allocations after locking, not from a stale cache.
+            po.flush_recordset()
+            po.order_line.flush_recordset()
             self.env.cr.execute('SELECT id FROM purchase_order WHERE id=%s FOR UPDATE', [po.id])
+            po.invalidate_recordset()
+            po.order_line.invalidate_recordset()
+            if po.x_approval_state != 'approved' or not po.x_all_officers_signed or po.state == 'cancel':
+                raise UserError(_('Board/Floor approval and all officer signatures are required.'))
             if not rec._po_compatible(po, lines):
                 raise UserError(_('The PO total and FRS allocations must exactly match this expense. Partial or combined payments require manual review.'))
             if self.search_count([('purchase_id', '=', po.id), ('id', '!=', rec.id), ('journal_id', '!=', False)]):
@@ -266,7 +287,7 @@ class Expense(models.Model):
                 raise UserError(_('Document the restricted fund purpose before recording.'))
             # Historical charges must use their historical approved budget.
             fye = rec.date.replace(year=rec.date.year + (rec.date.month >= 4), month=3, day=31)
-            for account in {line['account'] for line in lines}:
+            for account in sorted({line['account'] for line in lines}, key=lambda account: account.id):
                 budgets = self.env['elks.budget.line'].search([
                     ('account_id', '=', account.id), ('budget_id.fiscal_year_end', '=', fye),
                     ('budget_id.state', 'in', ['floor_approved', 'submitted'])])
@@ -319,8 +340,8 @@ class Expense(models.Model):
                 journal = self.env['elks.journal.entry'].create({'entry_number': f'QBO-{rec.connection_id.id}-Purchase-{rec.qbo_id}',
                     'date': rec.date, 'memo': rec.name + ' / ' + po.name, 'currency_id': rec.currency_id.id, 'line_ids': entries})
                 journal.action_post()
-            rec.journal_id = journal
+            rec._write_import({'journal_id': journal.id})
             po.order_line.filtered(lambda l: not l.display_type).write({
                 'x_ordered': True, 'x_ordered_date': rec.date, 'x_journal_entry_id': journal.id})
-            rec.review_reason = False
+            rec._write_import({'review_reason': False})
             rec.message_post(body=_('FRS entry recorded; PO lines now reference the same entry. No new payment was issued.'))

@@ -19,7 +19,7 @@ class FRSExport(models.TransientModel):
             raise UserError(_('FRS actuals require complete calendar months.'))
         expenses = self.env['elks.qbo.expense'].search([
             ('date', '>=', self.period_start), ('date', '<=', self.period_end)])
-        if any(not rec.journal_id or rec.source_changed or rec.source_missing or rec.review_reason for rec in expenses):
+        if any(not rec.journal_id or rec.journal_id.state != 'posted' or not rec.journal_id.is_balanced or rec.source_changed or rec.source_missing or rec.review_reason for rec in expenses):
             raise UserError(_('Resolve and record all imported QuickBooks expenses for this period before exporting FRS actuals.'))
         result = super()._export_actuals(settings)
         # FRS Exhibit J: monthly debit-minus-credit totals dated at period end.

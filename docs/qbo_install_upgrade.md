@@ -1,6 +1,6 @@
 # QuickBooks Online installation and upgrade
 
-QuickBooks expenses are built into **Elks FRS 19.0.3.0.1**. Install or upgrade FRS;
+QuickBooks expenses are built into **Elks FRS 19.0.3.0.2**. Install or upgrade FRS;
 there is no separate QuickBooks feature add-on to install. Native Odoo `purchase`
 is a dependency so PO links always exist. Custom `elkspurchase` remains optional
 to avoid a circular dependency: it already depends on FRS. FRS imports remain
@@ -132,7 +132,7 @@ still require the staging checks above.
 
 ## Recovery from the initial CSV loader error
 
-Version 19.0.3.0.1 fixes the installation error `KeyError: qbo_access`. Odoo uses
+Version 19.0.3.0.2 fixes the installation error `KeyError: qbo_access`. Odoo uses
 the CSV filename to select the destination model. The QuickBooks access rows now
 load through `security/ir.model.access.csv` with their existing XML IDs retained.
 No access records or business data need to be deleted.

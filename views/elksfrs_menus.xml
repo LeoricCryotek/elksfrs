@@ -14,6 +14,11 @@
               action="action_elks_frs_dashboard_server"
               sequence="5"/>
 
+    <menuitem id="menu_elksfrs_accounting"
+              name="Accounting"
+              parent="menu_elksfrs_root"
+              sequence="10"/>
+
     <!-- ===== Dues & Payments ===== -->
     <menuitem id="menu_elksfrs_dues"
               name="Dues &amp; Payments"
@@ -58,10 +63,6 @@
               sequence="20"/>
 
     <!-- ===== Accounting ===== -->
-    <menuitem id="menu_elksfrs_accounting"
-              name="Accounting"
-              parent="menu_elksfrs_root"
-              sequence="10"/>
 
     <menuitem id="menu_elksfrs_dues_adjustments"
               name="Dues Adjustments"
