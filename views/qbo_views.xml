@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <record id="qbo_connection_list" model="ir.ui.view">
+        <field name="name">elks.qbo.connection.list</field><field name="model">elks.qbo.connection</field>
+        <field name="arch" type="xml"><list><field name="name"/><field name="company_id"/><field name="environment"/><field name="connected"/><field name="last_sync"/></list></field>
+    </record>
+    <record id="qbo_connection_form" model="ir.ui.view">
+        <field name="name">elks.qbo.connection.form</field><field name="model">elks.qbo.connection</field>
+        <field name="arch" type="xml"><form>
+            <header><button name="action_connect" type="object" string="Connect to QuickBooks" groups="base.group_system"/>
+                <button name="action_pull" type="object" string="Pull Expenses" groups="elksfrs.group_elksfrs_manager" class="oe_highlight"/>
+                <button name="action_disconnect" type="object" string="Disconnect" groups="base.group_system"/></header>
+            <sheet><div class="alert alert-info" invisible="purchase_workflow_available">Install Elks Lodge Purchase Requests to enable purchase approvals and PO matching. QuickBooks imports remain available.</div><group><field name="name"/><field name="company_id"/><field name="environment"/>
+                <field name="connected"/><field name="realm_id"/><field name="redirect_uri" widget="url"/>
+                <field name="client_id" groups="base.group_system"/><field name="client_secret" password="True" groups="base.group_system"/>
+                <field name="start_date"/><field name="purchase_workflow_available"/><field name="auto_requisition"/><field name="auto_record"/>
+                <field name="last_sync"/><field name="last_error"/><field name="active"/></group>
+                <notebook><page string="FRS Account Mapping"><field name="mapping_ids"><list editable="bottom" create="0" delete="0">
+                    <field name="qbo_id"/><field name="name" readonly="1"/><field name="source_type"/><field name="account_id" options="{'no_create': True}"/>
+                </list></field></page><page string="Vendor Mapping"><field name="vendor_ids"><list editable="bottom" create="0" delete="0">
+                    <field name="qbo_id"/><field name="name" readonly="1"/><field name="partner_id"/>
+                </list></field></page></notebook>
+            </sheet></form></field>
+    </record>
+    <record id="qbo_expense_list" model="ir.ui.view">
+        <field name="name">elks.qbo.expense.list</field><field name="model">elks.qbo.expense</field>
+        <field name="arch" type="xml"><list create="0" delete="0" decoration-warning="state == 'review'">
+            <field name="date"/><field name="name"/><field name="partner_id"/><field name="amount" sum="Total"/>
+            <field name="currency_id" column_invisible="1"/><field name="purchase_id"/><field name="journal_id"/><field name="state"/>
+        </list></field>
+    </record>
+    <record id="qbo_expense_form" model="ir.ui.view">
+        <field name="name">elks.qbo.expense.form</field><field name="model">elks.qbo.expense</field>
+        <field name="arch" type="xml"><form create="0" delete="0"><header>
+            <button name="action_recheck" type="object" string="Recheck Mapping" groups="elksfrs.group_elksfrs_manager"/>
+            <button name="action_prepare_purchase" type="object" string="Find PO or Prepare Requisition" invisible="not purchase_workflow_available" groups="elksfrs.group_elksfrs_manager"/>
+            <button name="action_create_requisition" type="object" string="Create New Requisition" invisible="purchase_id or not purchase_workflow_available" groups="elksfrs.group_elksfrs_manager"/>
+            <button name="action_record_frs" type="object" string="Record in FRS" class="oe_highlight" groups="elksfrs.group_elksfrs_manager" invisible="journal_id or not purchase_workflow_available"/>
+        </header><sheet><div class="alert alert-info" invisible="purchase_workflow_available">Install Elks Lodge Purchase Requests to enable purchase approvals and PO matching. QuickBooks imports remain available.</div><group><field name="name"/><field name="connection_id"/><field name="company_id"/>
+            <field name="qbo_id"/><field name="purchase_workflow_available" invisible="1"/><field name="date"/><field name="partner_id"/><field name="amount"/>
+            <field name="currency_id" invisible="1"/><field name="purchase_id" options="{'no_create': True}"/>
+            <field name="journal_id"/><field name="existing_journal_id" domain="[('state', '=', 'posted'), ('date', '=', date)]" options="{'no_create': True}"/><field name="state"/><field name="review_reason"/>
+            <field name="source_changed"/><field name="source_missing"/><field name="restricted_purpose"/>
+        </group></sheet><chatter/></form></field>
+    </record>
+    <record id="qbo_match_form" model="ir.ui.view">
+        <field name="name">elks.qbo.match.form</field><field name="model">elks.qbo.match</field>
+        <field name="arch" type="xml"><form><group><field name="purchase_id"/><field name="company_id" invisible="1"/>
+            <field name="partner_id" invisible="1"/><field name="expense_id" options="{'no_create': True}"/></group>
+            <footer><button name="action_match" type="object" string="Link Charge" class="oe_highlight"/><button special="cancel" string="Cancel"/></footer>
+        </form></field>
+    </record>
+    <record id="qbo_purchase_form" model="ir.ui.view">
+        <field name="name">purchase.order.form.qbo</field><field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml"><xpath expr="//header" position="inside">
+            <field name="qbo_workflow_available" invisible="1"/><button name="action_match_qbo_charge" invisible="not qbo_workflow_available" type="object" string="Match QuickBooks Charge" groups="elksfrs.group_elksfrs_manager"/>
+        </xpath><xpath expr="//notebook" position="inside"><page string="QuickBooks Charges" groups="elksfrs.group_elksfrs_user">
+            <field name="qbo_expense_ids" readonly="1"><list create="0" delete="0"><field name="date"/><field name="name"/>
+                <field name="amount"/><field name="state"/><field name="journal_id"/></list></field>
+        </page></xpath></field>
+    </record>
+    <record id="qbo_action_connections" model="ir.actions.act_window"><field name="name">QuickBooks Connections</field>
+        <field name="res_model">elks.qbo.connection</field><field name="view_mode">list,form</field></record>
+    <record id="qbo_action_expenses" model="ir.actions.act_window"><field name="name">QuickBooks Expenses</field>
+        <field name="res_model">elks.qbo.expense</field><field name="view_mode">list,form</field></record>
+    <menuitem id="qbo_menu_qbo" name="QuickBooks Online" parent="elksfrs.menu_elksfrs_root" sequence="60" groups="elksfrs.group_elksfrs_user"/>
+    <menuitem id="qbo_menu_expenses" name="Expenses and PO Matching" parent="qbo_menu_qbo" action="qbo_action_expenses"/>
+    <menuitem id="qbo_menu_connections" name="Connections and Mapping" parent="qbo_menu_qbo" action="qbo_action_connections" groups="elksfrs.group_elksfrs_manager"/>
+</odoo>

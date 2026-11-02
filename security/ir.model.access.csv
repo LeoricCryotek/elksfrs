@@ -48,3 +48,13 @@ access_elks_cash_count_user,elks.cash.count.user,model_elks_cash_count,group_elk
 access_elks_cash_count_manager,elks.cash.count.manager,model_elks_cash_count,group_elksfrs_manager,1,1,1,1
 access_elks_cash_movement_user,elks.cash.movement.user,model_elks_cash_movement,group_elksfrs_user,1,1,1,0
 access_elks_cash_movement_manager,elks.cash.movement.manager,model_elks_cash_movement,group_elksfrs_manager,1,1,1,1
+qbo_connection_user,QBO connection read,model_elks_qbo_connection,elksfrs.group_elksfrs_user,1,0,0,0
+qbo_connection_manager,QBO connection manager,model_elks_qbo_connection,elksfrs.group_elksfrs_manager,1,1,0,0
+qbo_connection_admin,QBO connection admin,model_elks_qbo_connection,base.group_system,1,1,1,0
+qbo_account_user,QBO account read,model_elks_qbo_account_map,elksfrs.group_elksfrs_user,1,0,0,0
+qbo_account_manager,QBO account mapping,model_elks_qbo_account_map,elksfrs.group_elksfrs_manager,1,1,1,0
+qbo_vendor_user,QBO vendor read,model_elks_qbo_vendor_map,elksfrs.group_elksfrs_user,1,0,0,0
+qbo_vendor_manager,QBO vendor mapping,model_elks_qbo_vendor_map,elksfrs.group_elksfrs_manager,1,1,1,0
+qbo_expense_user,QBO expense read,model_elks_qbo_expense,elksfrs.group_elksfrs_user,1,0,0,0
+qbo_expense_manager,QBO expense manager,model_elks_qbo_expense,elksfrs.group_elksfrs_manager,1,1,1,0
+qbo_match_manager,QBO match wizard,model_elks_qbo_match,elksfrs.group_elksfrs_manager,1,1,1,1

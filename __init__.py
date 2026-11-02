@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from . import models
 from . import wizard
+from . import controllers
+from .qbo_migration import adopt_legacy_qbo
 
 import logging
 
@@ -13,6 +15,7 @@ def _pre_init_migrate_budget_states(env):
     Runs before module update so existing records match the new
     selection values.  Safe to run multiple times.
     """
+    adopt_legacy_qbo(env.cr)
     env.cr.execute("""
         SELECT 1 FROM information_schema.tables
         WHERE table_name = 'elks_budget'

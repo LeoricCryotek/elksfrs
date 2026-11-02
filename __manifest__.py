@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Elks FRS - Financial Reporting System",
-    "version": "19.0.2.1",
+    "version": "19.0.3.0.1",
     "category": "Accounting",
     "summary": "Elks Lodge General Ledger, Chart of Accounts, Dues Processing, and FRS CSV exports",
     "description": """
@@ -17,6 +17,8 @@ Features:
 - Monthly FRS actuals CSV export (LodgeNumber, LodgeGLAccount, Date, Amount)
 - Annual FRS budget CSV export (LodgeNumber, LodgeGLAccount, FYE, Version, Annual)
 - FRS submission tracking with automated monthly reminders
+- QuickBooks Online expense sync, PO matching, and retrospective approval requests
+- Automatic preservation of legacy elksfrs_qbo data on upgrade
 - QuickBooks Desktop CSV/IIF import wizard
 - Clover POS transaction CSV import wizard
 - Cost-to-sales ratio monitoring (CoGS ≤ 35%, Labor ≤ 35%)
@@ -28,6 +30,7 @@ Features:
     "depends": [
         "base",
         "account",
+        "purchase",  # native PO links; elkspurchase remains optional to avoid a cycle
         "mail",
         "elkscontacts",
     ],
@@ -69,7 +72,11 @@ Features:
         "report/bag_tag.xml",
         "report/cash_slip_reports.xml",
         "views/elksfrs_menus.xml",
+        "security/qbo_rules.xml",
+        "data/qbo_data.xml",
+        "views/qbo_views.xml",
     ],
+    "external_dependencies": {"python": ["requests"]},
     "installable": True,
     "application": True,
     "pre_init_hook": "_pre_init_migrate_budget_states",

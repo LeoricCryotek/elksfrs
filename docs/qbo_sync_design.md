@@ -1,6 +1,6 @@
 # QuickBooks Online Sync — Design Doc
 
-**Status:** Draft v1 — for review
+**Status:** Historical design proposal. QuickBooks expense syncing is now implemented inside `elksfrs` 19.0.3.0.0. See [installation and migration instructions](qbo_install_upgrade.md) for the supported scope and current behavior; the broader entity/CDC plans below remain future work.
 **Author:** Danny Santiago (with Claude)
 **Module:** `elksfrs` — new `qbo_*` subsystem
 **Target version:** `19.0.3.0`

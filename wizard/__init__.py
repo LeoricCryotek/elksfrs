@@ -7,3 +7,6 @@ from . import process_paid_members_wizard
 from . import qb_pnl_reconcile_wizard
 from . import clms_payment_import_wizard
 from . import qb_coa_import_wizard
+
+from . import qbo_match
+from . import qbo_export
