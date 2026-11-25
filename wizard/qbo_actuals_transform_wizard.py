@@ -48,10 +48,14 @@ _logger = logging.getLogger(__name__)
 
 
 # Column header aliases QBO may emit depending on locale / version.
+# The FRS guide tells treasurers to customize to Account # / Date /
+# Debit / Credit — but we also accept QBO's default "Amount" (signed)
+# column so the exporter doesn't fail on a vanilla report export.
 _COL_ACCOUNT = {'account #', 'account number', 'account no', 'account'}
 _COL_DATE    = {'date', 'txn date', 'transaction date'}
 _COL_DEBIT   = {'debit'}
 _COL_CREDIT  = {'credit'}
+_COL_AMOUNT  = {'amount', 'subt nat amount', 'nat amount', 'net amount'}
 
 # Account-number pattern: 5-digit code, optional 1-2 char subaccount.
 # Matches both "10101" and "10104A" and "21200A" and "10104B1".
@@ -285,9 +289,15 @@ def _extract_transactions(rows):
             if dt is None:
                 # Likely a QBO month header like "September 2026" — skip
                 continue
-            debit = _extract_decimal(row, cols['debit'])
-            credit = _extract_decimal(row, cols['credit'])
-            amount = debit - credit
+            if cols.get('debit') is not None and cols.get('credit') is not None:
+                debit = _extract_decimal(row, cols['debit'])
+                credit = _extract_decimal(row, cols['credit'])
+                amount = debit - credit
+            elif cols.get('amount') is not None:
+                # QBO's signed Amount column: positive = debit, negative = credit
+                amount = _extract_decimal(row, cols['amount'])
+            else:
+                continue
 
             if not acct:
                 skipped.append({
@@ -316,8 +326,14 @@ class _SkipRow(Exception):
 
 
 def _find_header(rows):
-    """Locate the header row and return (row_index, {name: col_idx})."""
-    for i, row in enumerate(rows[:30]):  # headers are in the first 30 rows
+    """Locate the header row and return (row_index, {name: col_idx}).
+
+    Accepts two column layouts:
+      1. FRS-guide custom: Account # · Date · Debit · Credit
+      2. QBO vanilla export: Date · ... · Amount (signed, negative = credit)
+    Account # may live in its own column OR only on section-header rows.
+    """
+    for i, row in enumerate(rows[:30]):
         if not row:
             continue
         normalized = [(c or '').strip().lower() for c in row]
@@ -331,11 +347,17 @@ def _find_header(rows):
                 cols['debit'] = j
             elif cell in _COL_CREDIT and 'credit' not in cols:
                 cols['credit'] = j
-        if {'date', 'debit', 'credit'}.issubset(cols.keys()):
-            # Account column is optional at this stage — it may only
-            # appear on section-header rows.
-            if 'account' not in cols:
-                cols['account'] = None
+            elif cell in _COL_AMOUNT and 'amount' not in cols:
+                cols['amount'] = j
+        has_date = 'date' in cols
+        has_dr_cr = 'debit' in cols and 'credit' in cols
+        has_amount = 'amount' in cols
+        if has_date and (has_dr_cr or has_amount):
+            # Fill in missing keys so downstream lookups are safe.
+            cols.setdefault('account', None)
+            cols.setdefault('debit', None)
+            cols.setdefault('credit', None)
+            cols.setdefault('amount', None)
             return i, cols
     return None, None
 
