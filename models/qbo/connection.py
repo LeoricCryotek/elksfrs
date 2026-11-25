@@ -187,25 +187,64 @@ class Connection(models.Model):
             raise AccessError(_('Only administrators can change the QuickBooks connection identity or credentials.'))
         if 'start_date' in vals and any(rec.last_sync for rec in self):
             raise UserError(_('The import cutoff cannot change after the first successful pull.'))
-        if set(vals) & {'company_id', 'environment'} and any(rec.realm_id for rec in self):
-            raise UserError(_('Company and environment cannot change after connecting QuickBooks.'))
+        # Block company/environment changes only while currently connected;
+        # once the admin has disconnected, allow reconfiguring to point at a
+        # different realm / environment on the next Connect.
+        if set(vals) & {'company_id', 'environment'} and any(rec.connected for rec in self):
+            raise UserError(_(
+                'Disconnect QuickBooks first — company and environment '
+                'can only change when the connection is inactive.'))
         return super().write(vals)
 
     def action_disconnect(self):
+        """Clear local OAuth state so the connection can be reconfigured.
+
+        Best-effort Intuit revocation: if Intuit rejects or times out
+        (common with expired sandbox tokens), we still clear everything
+        locally so the admin isn't stuck. Local cleanup is the
+        authoritative action; the revoke call is housekeeping.
+        """
         self.ensure_one()
         if not self.env.user.has_group('base.group_system'):
             raise AccessError(_('Only administrators can disconnect QuickBooks.'))
         self._lock()
-        if self.refresh_token:
+        # Try to revoke at Intuit, but never block local cleanup on it.
+        if self.refresh_token and self.client_id and self.client_secret:
             try:
-                response = requests.post('https://developer.api.intuit.com/v2/oauth2/tokens/revoke',
-                    auth=(self.client_id, self.client_secret), json={'token': self.refresh_token},
+                response = requests.post(
+                    'https://developer.api.intuit.com/v2/oauth2/tokens/revoke',
+                    auth=(self.client_id, self.client_secret),
+                    json={'token': self.refresh_token},
                     headers={'Accept': 'application/json'}, timeout=30)
                 if response.status_code != 200:
-                    raise UserError(_('QuickBooks token revocation failed. Retry disconnect.'))
-            except requests.RequestException:
-                raise UserError(_('QuickBooks revocation service is unavailable.')) from None
-        self.write({'access_token': False, 'refresh_token': False, 'expires_at': False, 'connected': False})
+                    _logger.warning(
+                        'QBO token revocation returned HTTP %s for connection '
+                        '%s; clearing local state anyway.',
+                        response.status_code, self.id)
+            except requests.RequestException as exc:
+                _logger.warning(
+                    'QBO token revocation endpoint unreachable (%s); clearing '
+                    'local state anyway.', exc)
+        # Clear every piece of connection-specific state, including
+        # realm_id, so the admin can repoint at a different QBO company
+        # or environment on the next Connect click.
+        self.sudo().write({
+            'access_token': False,
+            'refresh_token': False,
+            'expires_at': False,
+            'connected': False,
+            'realm_id': False,
+            'last_error': False,
+        })
+        return {'type': 'ir.actions.client', 'tag': 'display_notification',
+                'params': {
+                    'title': _('QuickBooks disconnected'),
+                    'message': _(
+                        'Local tokens and realm cleared. You can now switch '
+                        'Environment and click Connect to re-authorize.'),
+                    'type': 'success',
+                    'sticky': False,
+                }}
 
     def _token(self, data):
         self.ensure_one()
