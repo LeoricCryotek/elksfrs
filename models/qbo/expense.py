@@ -27,6 +27,10 @@ class Expense(models.Model):
     vendor_qbo_id = fields.Char(readonly=True)
     partner_id = fields.Many2one('res.partner', compute='_compute_partner', store=True)
     purchase_workflow_available = fields.Boolean(related='connection_id.purchase_workflow_available')
+    connection_environment = fields.Selection(
+        related='connection_id.environment', store=False, readonly=True,
+        string="QBO Environment",
+    )
     purchase_id = fields.Many2one('purchase.order', string='Purchase Order / Requisition', check_company=True,
                                   tracking=True, copy=False, domain="[('company_id', '=', company_id), ('state', '!=', 'cancel')]")
     journal_id = fields.Many2one('elks.journal.entry', readonly=True, copy=False, ondelete='restrict')
@@ -40,9 +44,268 @@ class Expense(models.Model):
                               ('ready', 'Ready to Record'), ('recorded', 'Recorded in FRS')], compute='_compute_state')
     _unique = models.Constraint('UNIQUE(connection_id, qbo_id)', 'This QuickBooks expense is already imported.')
 
+    # ------------------------------------------------------------------
+    # Payload unpacking — read-only surface over the stored QBO JSON.
+    # These are computed, not stored; the payload JSON is the
+    # authoritative source and never diverges from what QBO sent.
+    # ------------------------------------------------------------------
+    payment_type = fields.Char(
+        string='Payment Type', compute='_compute_payload_header',
+        help="Cash, Check, or CreditCard (from the QBO Purchase PaymentType).",
+    )
+    doc_number = fields.Char(
+        string='Reference / Check #', compute='_compute_payload_header',
+        help="QBO DocNumber — check number, credit-card last four, or "
+             "whatever reference the treasurer entered on the Purchase.",
+    )
+    private_note = fields.Text(
+        string='Memo (Private Note)', compute='_compute_payload_header',
+        help="The PrivateNote from QBO — typically the treasurer's "
+             "explanation of what the charge was for.",
+    )
+    payment_source_name = fields.Char(
+        string='Paid From (QBO Account)', compute='_compute_payload_header',
+        help="The QBO bank or credit-card account the charge was drawn "
+             "from. This is the account that needs an FRS Account "
+             "mapping on the Payment side.",
+    )
+    payment_source_qbo_id = fields.Char(
+        string='Payment Source QBO ID', compute='_compute_payload_header',
+    )
+    vendor_qbo_name = fields.Char(
+        string='Vendor (as named in QBO)', compute='_compute_payload_header',
+        help="The vendor name exactly as it appears in QuickBooks — "
+             "useful when the Partner mapping is still blank.",
+    )
+    line_count = fields.Integer(
+        string='Line Count', compute='_compute_payload_header',
+        help="Number of allocation lines on this QBO transaction.",
+    )
+    lines_html = fields.Html(
+        string='Line Items', compute='_compute_lines_html', sanitize=False,
+        help="Expense allocation lines from QBO, with the matched FRS "
+             "account where a mapping exists.",
+    )
+    mapping_html = fields.Html(
+        string='Account Mapping Status', compute='_compute_lines_html', sanitize=False,
+        help="Which QBO accounts on this transaction need mapping.",
+    )
+    qbo_deep_link = fields.Char(
+        string='Open in QuickBooks', compute='_compute_deep_link',
+        help="Direct URL to this transaction in the QuickBooks Online web UI.",
+    )
+    payload_pretty = fields.Text(
+        string='Raw QuickBooks Payload (JSON)', compute='_compute_payload_pretty',
+        help="The full JSON QBO returned for this transaction. "
+             "Diagnostic use; the authoritative source of truth.",
+    )
+
+    # ------------------------------------------------------------------
+    # Payload unpacking computes (surface detail without storing it)
+    # ------------------------------------------------------------------
+    @api.depends('payload')
+    def _compute_payload_header(self):
+        for rec in self:
+            p = rec.payload or {}
+            rec.payment_type = p.get('PaymentType') or ''
+            rec.doc_number = p.get('DocNumber') or ''
+            rec.private_note = p.get('PrivateNote') or ''
+            acct_ref = p.get('AccountRef') or {}
+            rec.payment_source_name = acct_ref.get('name') or ''
+            rec.payment_source_qbo_id = str(acct_ref.get('value') or '')
+            entity_ref = p.get('EntityRef') or {}
+            rec.vendor_qbo_name = entity_ref.get('name') or ''
+            # Count only real allocation lines, skipping subtotals / description-only.
+            real_lines = [
+                ln for ln in (p.get('Line') or [])
+                if ln.get('DetailType') not in ('DescriptionOnly', 'SubTotalLineDetail')
+            ]
+            rec.line_count = len(real_lines)
+
+    @api.depends('payload', 'connection_id.mapping_ids', 'connection_id.mapping_ids.account_id')
+    def _compute_lines_html(self):
+        """Render the expense's allocation lines + mapping status as HTML."""
+        import html as _html  # stdlib html module for escaping
+        for rec in self:
+            p = rec.payload or {}
+            lines = [
+                ln for ln in (p.get('Line') or [])
+                if ln.get('DetailType') not in ('DescriptionOnly', 'SubTotalLineDetail')
+            ]
+            # Pre-index mappings for fast lookup.
+            mapping_index = {}
+            for m in rec.connection_id.mapping_ids:
+                mapping_index[m.qbo_id] = m
+            # Line items table
+            if not lines:
+                rec.lines_html = ('<div class="text-muted">'
+                                  'No allocation lines in the QBO payload.</div>')
+            else:
+                rows = []
+                for i, ln in enumerate(lines, 1):
+                    detail = ln.get('AccountBasedExpenseLineDetail') or {}
+                    acct_ref = detail.get('AccountRef') or {}
+                    class_ref = detail.get('ClassRef') or {}
+                    customer_ref = detail.get('CustomerRef') or {}
+                    qbo_acct_id = str(acct_ref.get('value') or '')
+                    qbo_acct_name = acct_ref.get('name') or ''
+                    description = ln.get('Description') or ''
+                    amount = ln.get('Amount') or 0
+                    billable = detail.get('BillableStatus') or ''
+                    tax_code = detail.get('TaxCodeRef', {}).get('value') or ''
+                    mapping = mapping_index.get(qbo_acct_id)
+                    if mapping and mapping.account_id:
+                        mapped = (f'<span style="color:#060;">✔ '
+                                  f'{_html.escape(mapping.account_id.display_name)}'
+                                  f'</span>')
+                    elif mapping:
+                        mapped = ('<span style="color:#c00;">✘ '
+                                  'account known, mapping blank</span>')
+                    else:
+                        mapped = ('<span style="color:#c00;">✘ '
+                                  'account not yet in mapping table</span>')
+                    rows.append(
+                        f"<tr>"
+                        f"<td>{i}</td>"
+                        f"<td><code>{_html.escape(qbo_acct_id)}</code> "
+                        f"{_html.escape(qbo_acct_name)}</td>"
+                        f"<td>{_html.escape(description)}</td>"
+                        f"<td style='text-align:right;'>"
+                        f"{_html.escape(str(class_ref.get('name') or ''))}</td>"
+                        f"<td style='text-align:right;'>"
+                        f"{_html.escape(str(customer_ref.get('name') or ''))}</td>"
+                        f"<td style='text-align:right;'>"
+                        f"{_html.escape(f'{float(amount):,.2f}')}</td>"
+                        f"<td>{mapped}</td>"
+                        f"</tr>"
+                    )
+                rec.lines_html = (
+                    "<table class='table table-sm' style='font-size:.9em;'>"
+                    "<thead><tr>"
+                    "<th>#</th><th>QBO Account</th><th>Description</th>"
+                    "<th>Class</th><th>Customer</th>"
+                    "<th style='text-align:right;'>Amount</th>"
+                    "<th>FRS Mapping</th>"
+                    "</tr></thead><tbody>"
+                    + "".join(rows)
+                    + "</tbody></table>"
+                )
+            # Mapping-gap summary
+            gaps = []
+            # Payment source
+            pay_acct = (p.get('AccountRef') or {})
+            pay_id = str(pay_acct.get('value') or '')
+            if pay_id:
+                m = mapping_index.get(pay_id)
+                if not m or not m.account_id:
+                    gaps.append(
+                        f"Payment source: QBO account <code>{_html.escape(pay_id)}</code> "
+                        f"{_html.escape(pay_acct.get('name') or '')} — "
+                        f"not mapped to an FRS account."
+                    )
+            # Expense lines
+            for ln in lines:
+                acct_ref = (ln.get('AccountBasedExpenseLineDetail') or {}).get('AccountRef') or {}
+                qbo_id = str(acct_ref.get('value') or '')
+                if not qbo_id:
+                    continue
+                m = mapping_index.get(qbo_id)
+                if not m or not m.account_id:
+                    gaps.append(
+                        f"Expense allocation: QBO account "
+                        f"<code>{_html.escape(qbo_id)}</code> "
+                        f"{_html.escape(acct_ref.get('name') or '')} — "
+                        f"not mapped to an FRS account."
+                    )
+            if gaps:
+                rec.mapping_html = (
+                    "<div class='alert alert-warning'>"
+                    "<strong>Mapping gaps on this transaction:</strong>"
+                    "<ul style='margin-bottom:0;'>"
+                    + "".join(f"<li>{g}</li>" for g in gaps)
+                    + "</ul>"
+                    "<p style='margin-top:.5em; margin-bottom:0;'>"
+                    "Open <em>QuickBooks Online → Connections and Mapping</em>, "
+                    "find each account above on the <em>FRS Account Mapping</em> "
+                    "tab, pick the corresponding FRS account, save, then come "
+                    "back here and click <strong>Recheck Mapping</strong>."
+                    "</p></div>"
+                )
+            else:
+                rec.mapping_html = (
+                    "<div class='alert alert-success'>"
+                    "<strong>✔ All accounts on this transaction are mapped.</strong>"
+                    "</div>"
+                )
+
+    @api.depends('qbo_id', 'connection_id.environment', 'connection_id.realm_id')
+    def _compute_deep_link(self):
+        for rec in self:
+            if not rec.qbo_id or not rec.connection_id.realm_id:
+                rec.qbo_deep_link = ''
+                continue
+            host = (
+                'https://app.sandbox.qbo.intuit.com'
+                if (rec.connection_id.environment or '').lower() == 'sandbox'
+                else 'https://app.qbo.intuit.com'
+            )
+            # Purchase (cash / credit-card expense) deep link.
+            rec.qbo_deep_link = (
+                f"{host}/app/expense?txnId={rec.qbo_id}&txnType=Purchase"
+            )
+
+    @api.depends('payload')
+    def _compute_payload_pretty(self):
+        for rec in self:
+            if not rec.payload:
+                rec.payload_pretty = ''
+                continue
+            try:
+                rec.payload_pretty = json.dumps(
+                    rec.payload, indent=2, sort_keys=True, default=str)
+            except Exception:  # noqa: BLE001
+                rec.payload_pretty = str(rec.payload)
+
+    def action_open_in_qbo(self):
+        """Return an URL action opening this transaction in the QBO web UI."""
+        self.ensure_one()
+        if not self.qbo_deep_link:
+            raise UserError(_(
+                "No QuickBooks deep-link available — connection realm is missing."))
+        return {'type': 'ir.actions.act_url',
+                'url': self.qbo_deep_link, 'target': 'new'}
+
     def _manager(self):
         if not self.env.user.has_group('elksfrs.group_elksfrs_manager'):
             raise AccessError(_('FRS manager access is required.'))
+
+    def _assert_not_sandbox(self):
+        """Block any action that would write to the real FRS ledger
+        (journal entries, POs) while the connection is in sandbox mode.
+
+        Sandbox connections talk to sandbox-quickbooks.api.intuit.com,
+        which serves fake data from an Intuit-provided test company.
+        Letting that fake data create real journal entries or POs in
+        the production Odoo database would corrupt the real ledger —
+        the whole point of sandbox mode is to preview the workflow
+        before pointing at live books.
+
+        Pulls, mapping, and read-only review all stay enabled so you
+        can see exactly what will happen the moment you flip the
+        environment to Production.
+        """
+        for rec in self:
+            if (rec.connection_id.environment or '').lower() == 'sandbox':
+                raise UserError(_(
+                    "SANDBOX MODE — the QuickBooks connection is "
+                    "pointing at Intuit's sandbox test data, not your "
+                    "real books. No FRS journal entries, no purchase "
+                    "orders, and no requisitions can be created from "
+                    "sandbox-sourced charges.\n\n"
+                    "You can still pull, map, and review to preview "
+                    "the workflow. When you're ready to go live, open "
+                    "Connections and Mapping, change Environment to "
+                    "Production, and reconnect to QuickBooks."))
 
     def _lock(self):
         self.check_access('write')
@@ -140,6 +403,12 @@ class Expense(models.Model):
                 self._accounting_lines()
                 if not self.partner_id:
                     raise UserError(_('Map the QuickBooks vendor to an Odoo contact.'))
+                # Auto-post-when-mapped path: if the treasurer has
+                # declared QBO authoritative and the charge is fully
+                # mapped, post directly to FRS without PO workflow.
+                if self.connection_id.auto_post_when_mapped:
+                    if self._auto_post_direct():
+                        return
                 if self.connection_id.auto_requisition or self.connection_id.auto_record:
                     self._require_purchase_workflow()
                 if self.connection_id.auto_requisition:
@@ -148,6 +417,157 @@ class Expense(models.Model):
                     self.action_record_frs()
         except (UserError, ValueError) as exc:
             self._write_import({'review_reason': str(exc)})
+
+    def _auto_post_direct(self):
+        """Create the FRS journal entry directly — no PO workflow required.
+
+        Only fires when:
+          * `connection.auto_post_when_mapped` is True
+          * every expense allocation account is mapped to an active,
+            non-header FRS account
+          * the payment-source account is mapped
+          * the vendor is mapped
+          * no restricted-fund account is involved (those still need a
+            documented purpose; we route them to manual review)
+          * the charge isn't already linked to a journal
+          * no identical FRS entry already exists (dup-protection)
+
+        Returns True if a journal was created and linked. Returns False
+        when the row isn't eligible (e.g. restricted-fund) and the
+        regular PO flow should take over. Raises UserError for anything
+        the treasurer needs to see and fix.
+        """
+        self.ensure_one()
+        if self.journal_id:
+            return True
+        if self.source_changed or self.source_missing:
+            return False
+
+        # Sandbox guard: pulls still populate the review queue so the
+        # treasurer can preview the workflow, but auto-posting fake
+        # transactions into the real FRS ledger is blocked.
+        if (self.connection_id.environment or '').lower() == 'sandbox':
+            self._write_import({'review_reason': _(
+                "SANDBOX MODE — this charge came from Intuit's sandbox "
+                "test data. Auto-post is disabled while the connection "
+                "is in sandbox; the charge is held here for preview. "
+                "Switch Environment to Production and reconnect to go live.")})
+            return False
+
+        lines, payment = self._accounting_lines()
+
+        # Restricted-fund charges always go through manual review so the
+        # restricted purpose is documented.
+        if payment.is_restricted or any(l['account'].is_restricted for l in lines):
+            if not self.restricted_purpose:
+                self._write_import({'review_reason': _(
+                    "Restricted-fund charge — auto-post skipped. Open "
+                    "the expense, fill in Restricted Fund Purpose, then "
+                    "click Record in FRS (or run Auto-Post All again).")})
+                return False
+
+        # Single-company guard mirrors action_record_frs — base FRS
+        # journals don't isolate by company.
+        if self.env['res.company'].sudo().search_count([]) != 1:
+            raise UserError(_(
+                "Auto-post is limited to single-company databases until "
+                "the base FRS ledger supports company isolation."))
+
+        # Optional budget enforcement.
+        if self.connection_id.enforce_budget_on_auto_post:
+            self._check_budget_room(lines)
+
+        # Build the balanced double-entry.
+        entries = [(0, 0, {
+            'account_id': line['account'].id,
+            'debit': line['amount'],
+            'memo': line['memo'],
+        }) for line in lines]
+        entries.append((0, 0, {
+            'account_id': payment.id,
+            'credit': self.amount,
+            'memo': self.name,
+        }))
+
+        # Duplicate detection — if a posted JE on this date already has
+        # the exact same account+debit/credit shape, link to it instead
+        # of creating a twin.
+        expected = defaultdict(lambda: [0.0, 0.0])
+        for cmd in entries:
+            vals = cmd[2]
+            expected[vals['account_id']][0] += vals.get('debit', 0)
+            expected[vals['account_id']][1] += vals.get('credit', 0)
+
+        def _matches(entry):
+            if entry.state != 'posted' or entry.date != self.date or entry.currency_id != self.currency_id:
+                return False
+            actual = defaultdict(lambda: [0.0, 0.0])
+            for line in entry.line_ids:
+                actual[line.account_id.id][0] += line.debit
+                actual[line.account_id.id][1] += line.credit
+            return set(actual) == set(expected) and all(
+                not self.currency_id.compare_amounts(actual[k][i], expected[k][i])
+                for k in expected for i in (0, 1))
+
+        existing = self.env['elks.journal.entry'].search([
+            ('date', '=', self.date), ('state', '=', 'posted')])
+        for candidate in existing:
+            if _matches(candidate) and not self.search_count([
+                    ('journal_id', '=', candidate.id)]):
+                self._write_import({
+                    'journal_id': candidate.id, 'review_reason': False})
+                self.message_post(body=_(
+                    "Auto-linked to pre-existing FRS entry %s (same "
+                    "date, accounts, and allocations).") % candidate.entry_number)
+                return True
+
+        # Create the new journal entry and post it.
+        journal = self.env['elks.journal.entry'].create({
+            'entry_number': f'QBO-{self.connection_id.id}-Purchase-{self.qbo_id}',
+            'date': self.date,
+            'memo': self.name + _(' (auto-posted from QuickBooks)'),
+            'currency_id': self.currency_id.id,
+            'line_ids': entries,
+        })
+        journal.action_post()
+        self._write_import({'journal_id': journal.id, 'review_reason': False})
+        self.message_post(body=_(
+            "Auto-posted to FRS. QuickBooks is the authoritative ledger; "
+            "no PO approval was required."))
+        return True
+
+    def _check_budget_room(self, lines):
+        """Raise if any account on this charge is over its FYE budget."""
+        self.ensure_one()
+        fye = self.date.replace(
+            year=self.date.year + (1 if self.date.month >= 4 else 0),
+            month=3, day=31)
+        start = fye.replace(year=fye.year - 1, month=4, day=1)
+        for account in sorted({line['account'] for line in lines},
+                              key=lambda a: a.id):
+            budget = self.env['elks.budget.line'].search([
+                ('account_id', '=', account.id),
+                ('budget_id.fiscal_year_end', '=', fye),
+                ('budget_id.state', 'in', ['floor_approved', 'submitted']),
+            ], limit=1)
+            if not budget:
+                continue  # no budget on file; silently allow
+            actuals = self.env['elks.journal.entry.line'].search([
+                ('account_id', '=', account.id),
+                ('entry_state', '=', 'posted'),
+                ('date', '>=', start), ('date', '<=', fye)])
+            actual = sum(actuals.mapped('debit')) - sum(actuals.mapped('credit'))
+            new_charge = sum(l['amount'] for l in lines if l['account'] == account)
+            if self.currency_id.compare_amounts(
+                    actual + new_charge, budget.amount) > 0:
+                raise UserError(_(
+                    "Auto-post would push %(account)s over its approved "
+                    "budget ($%(actual).2f actual + $%(new).2f would exceed "
+                    "$%(budget).2f). Approve an amendment or disable "
+                    "'Block over-budget auto-posts' on the connection.") % {
+                        'account': account.display_name,
+                        'actual': actual, 'new': new_charge,
+                        'budget': budget.amount})
 
     def _accounting_lines(self):
         self.ensure_one()
@@ -205,6 +625,7 @@ class Expense(models.Model):
 
     def action_prepare_purchase(self):
         self._manager()
+        self._assert_not_sandbox()
         self._require_purchase_workflow()
         self._lock()
         for rec in self:
@@ -230,6 +651,7 @@ class Expense(models.Model):
 
     def action_create_requisition(self):
         self._manager()
+        self._assert_not_sandbox()
         self._require_purchase_workflow()
         self._lock()
         for rec in self:
@@ -255,6 +677,7 @@ class Expense(models.Model):
 
     def action_record_frs(self):
         self._manager()
+        self._assert_not_sandbox()
         self._require_purchase_workflow()
         self._lock()
         for rec in self:

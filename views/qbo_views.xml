@@ -7,14 +7,98 @@
     <record id="qbo_connection_form" model="ir.ui.view">
         <field name="name">elks.qbo.connection.form</field><field name="model">elks.qbo.connection</field>
         <field name="arch" type="xml"><form>
-            <header><button name="action_connect" type="object" string="Connect to QuickBooks" groups="base.group_system"/>
-                <button name="action_pull" type="object" string="Pull Expenses" groups="elksfrs.group_elksfrs_manager" class="oe_highlight"/>
-                <button name="action_disconnect" type="object" string="Disconnect" groups="base.group_system"/></header>
-            <sheet><div class="alert alert-info" invisible="purchase_workflow_available">Install Elks Lodge Purchase Requests to enable purchase approvals and PO matching. QuickBooks imports remain available.</div><group><field name="name"/><field name="company_id"/><field name="environment"/>
-                <field name="connected"/><field name="realm_id"/><field name="redirect_uri" widget="url"/>
-                <field name="client_id" groups="base.group_system"/><field name="client_secret" password="True" groups="base.group_system"/>
-                <field name="start_date"/><field name="purchase_workflow_available"/><field name="auto_requisition"/><field name="auto_record"/>
-                <field name="last_sync"/><field name="last_error"/><field name="active"/></group>
+            <header>
+                <button name="action_connect" type="object" string="Connect to QuickBooks"
+                        groups="base.group_system"/>
+                <button name="action_pull" type="object" string="Pull Expenses"
+                        groups="elksfrs.group_elksfrs_manager" class="oe_highlight"/>
+                <button name="action_auto_post_all" type="object"
+                        string="Auto-Post Mapped Expenses"
+                        groups="elksfrs.group_elksfrs_manager"
+                        invisible="not auto_post_when_mapped or pending_review_count == 0"
+                        confirm="Walk the pending review queue and post every fully-mapped charge directly to FRS. Restricted-fund charges (if any) will stay in review."/>
+                <button name="action_generate_frs_report" type="object"
+                        string="Generate FRS Report"
+                        groups="elksfrs.group_elksfrs_manager"
+                        invisible="environment == 'sandbox' or not connected"
+                        help="Pull live from QBO Reports API and produce the FRS Actuals CSV in one click."/>
+                <button name="action_disconnect" type="object" string="Disconnect"
+                        groups="base.group_system"/>
+            </header>
+            <sheet>
+                <!-- SANDBOX MODE — unmissable banner so nobody confuses
+                     Intuit's fake test data with their real books. -->
+                <div class="alert alert-danger"
+                     invisible="environment != 'sandbox'"
+                     role="alert"
+                     style="border-left: 6px solid #a40000;">
+                    <strong>⚠ SANDBOX MODE — preview only.</strong>
+                    This connection is pointing at Intuit's sandbox test
+                    data, not your real QuickBooks books. Pulls and
+                    mapping work normally so you can preview the
+                    workflow, but
+                    <strong>no FRS journal entries, no POs, and no
+                    requisitions will be created</strong> from
+                    sandbox-sourced charges. Switch <em>Environment</em>
+                    to <em>Production</em> and reconnect to go live.
+                </div>
+
+                <div class="alert alert-info" invisible="purchase_workflow_available">
+                    Install Elks Lodge Purchase Requests to enable purchase
+                    approvals and PO matching. QuickBooks imports remain
+                    available.
+                </div>
+
+                <!-- Pending review banner -->
+                <div class="alert alert-warning"
+                     invisible="pending_review_count == 0">
+                    <strong>
+                        <field name="pending_review_count" readonly="1" nolabel="1"/>
+                        pending expense(s) to review.
+                    </strong>
+                    &#160;
+                    <span invisible="not auto_post_when_mapped">
+                        Click <em>Auto-Post Mapped Expenses</em> above to drain
+                        the queue in one shot — anything still not fully mapped
+                        will stay here with a specific reason attached.
+                    </span>
+                    <span invisible="auto_post_when_mapped">
+                        Enable <em>Auto-post fully-mapped charges to FRS</em>
+                        below to have Odoo post them directly, treating QBO as
+                        the authoritative ledger (no second approval).
+                    </span>
+                </div>
+
+                <group>
+                    <group string="Connection">
+                        <field name="name"/>
+                        <field name="company_id"/>
+                        <field name="environment"/>
+                        <field name="connected"/>
+                        <field name="realm_id"/>
+                        <field name="redirect_uri" widget="url"/>
+                        <field name="client_id" groups="base.group_system"/>
+                        <field name="client_secret" password="True"
+                               groups="base.group_system"/>
+                        <field name="start_date"/>
+                        <field name="active"/>
+                    </group>
+                    <group string="Automation">
+                        <field name="auto_post_when_mapped"/>
+                        <field name="enforce_budget_on_auto_post"
+                               invisible="not auto_post_when_mapped"/>
+                        <field name="purchase_workflow_available"/>
+                        <field name="auto_requisition"
+                               invisible="auto_post_when_mapped"/>
+                        <field name="auto_record"
+                               invisible="auto_post_when_mapped"/>
+                    </group>
+                    <group string="Status">
+                        <field name="last_sync"/>
+                        <field name="last_error"/>
+                        <field name="pending_review_count" readonly="1"/>
+                    </group>
+                </group>
                 <notebook><page string="FRS Account Mapping"><field name="mapping_ids"><list editable="bottom" create="0" delete="0">
                     <field name="qbo_id"/><field name="name" readonly="1"/><field name="source_type"/><field name="account_id" options="{'no_create': True}"/>
                 </list></field></page><page string="Vendor Mapping"><field name="vendor_ids"><list editable="bottom" create="0" delete="0">
@@ -30,18 +114,125 @@
         </list></field>
     </record>
     <record id="qbo_expense_form" model="ir.ui.view">
-        <field name="name">elks.qbo.expense.form</field><field name="model">elks.qbo.expense</field>
-        <field name="arch" type="xml"><form create="0" delete="0"><header>
-            <button name="action_recheck" type="object" string="Recheck Mapping" groups="elksfrs.group_elksfrs_manager"/>
-            <button name="action_prepare_purchase" type="object" string="Find PO or Prepare Requisition" invisible="not purchase_workflow_available" groups="elksfrs.group_elksfrs_manager"/>
-            <button name="action_create_requisition" type="object" string="Create New Requisition" invisible="purchase_id or not purchase_workflow_available" groups="elksfrs.group_elksfrs_manager"/>
-            <button name="action_record_frs" type="object" string="Record in FRS" class="oe_highlight" groups="elksfrs.group_elksfrs_manager" invisible="journal_id or not purchase_workflow_available"/>
-        </header><sheet><div class="alert alert-info" invisible="purchase_workflow_available">Install Elks Lodge Purchase Requests to enable purchase approvals and PO matching. QuickBooks imports remain available.</div><group><field name="name"/><field name="connection_id"/><field name="company_id"/>
-            <field name="qbo_id"/><field name="purchase_workflow_available" invisible="1"/><field name="date"/><field name="partner_id"/><field name="amount"/>
-            <field name="currency_id" invisible="1"/><field name="purchase_id" options="{'no_create': True}"/>
-            <field name="journal_id"/><field name="existing_journal_id" domain="[('state', '=', 'posted'), ('date', '=', date)]" options="{'no_create': True}"/><field name="state"/><field name="review_reason"/>
-            <field name="source_changed"/><field name="source_missing"/><field name="restricted_purpose"/>
-        </group></sheet><chatter/></form></field>
+        <field name="name">elks.qbo.expense.form</field>
+        <field name="model">elks.qbo.expense</field>
+        <field name="arch" type="xml">
+        <form create="0" delete="0">
+            <header>
+                <button name="action_recheck" type="object" string="Recheck Mapping"
+                        groups="elksfrs.group_elksfrs_manager"/>
+                <button name="action_prepare_purchase" type="object"
+                        string="Find PO or Prepare Requisition"
+                        invisible="not purchase_workflow_available"
+                        groups="elksfrs.group_elksfrs_manager"/>
+                <button name="action_create_requisition" type="object"
+                        string="Create New Requisition"
+                        invisible="purchase_id or not purchase_workflow_available"
+                        groups="elksfrs.group_elksfrs_manager"/>
+                <button name="action_record_frs" type="object" string="Record in FRS"
+                        class="oe_highlight"
+                        groups="elksfrs.group_elksfrs_manager"
+                        invisible="journal_id or not purchase_workflow_available"/>
+                <button name="action_open_in_qbo" type="object"
+                        string="Open in QuickBooks" icon="fa-external-link"
+                        invisible="not qbo_deep_link"/>
+            </header>
+            <sheet>
+                <!-- SANDBOX MODE banner mirrors the one on the connection. -->
+                <div class="alert alert-danger"
+                     invisible="connection_environment != 'sandbox'"
+                     role="alert"
+                     style="border-left: 6px solid #a40000;">
+                    <strong>⚠ SANDBOX MODE — preview only.</strong>
+                    This charge came from Intuit's sandbox test data, not
+                    your real QuickBooks books. Nothing will be posted to
+                    FRS or create a PO.
+                </div>
+
+                <div class="alert alert-info" invisible="purchase_workflow_available">
+                    Install Elks Lodge Purchase Requests to enable purchase
+                    approvals and PO matching. QuickBooks imports remain
+                    available.
+                </div>
+
+                <!-- Mapping-gap alert at the top — tells the user exactly
+                     what to fix when state=review for a mapping reason. -->
+                <field name="mapping_html" nolabel="1" readonly="1"
+                       invisible="state != 'review'"/>
+                <field name="connection_environment" invisible="1"/>
+
+                <!-- Header identity -->
+                <group>
+                    <group string="Transaction">
+                        <field name="name"/>
+                        <field name="qbo_id" string="QBO Purchase ID"/>
+                        <field name="date"/>
+                        <field name="amount"/>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="payment_type"/>
+                        <field name="doc_number"/>
+                    </group>
+                    <group string="Vendor and Payment">
+                        <field name="vendor_qbo_name" readonly="1"/>
+                        <field name="partner_id"/>
+                        <field name="payment_source_name" readonly="1"/>
+                        <field name="payment_source_qbo_id" readonly="1" invisible="1"/>
+                        <field name="line_count"/>
+                        <field name="connection_id"/>
+                        <field name="company_id"/>
+                    </group>
+                </group>
+
+                <group string="Memo from QuickBooks" invisible="not private_note">
+                    <field name="private_note" nolabel="1" readonly="1"/>
+                </group>
+
+                <notebook>
+                    <page string="Line Items &amp; Mapping" name="lines">
+                        <field name="lines_html" nolabel="1" readonly="1"/>
+                    </page>
+                    <page string="FRS Posting" name="frs">
+                        <group>
+                            <group>
+                                <field name="purchase_workflow_available" invisible="1"/>
+                                <field name="purchase_id" options="{'no_create': True}"/>
+                                <field name="journal_id"/>
+                                <field name="existing_journal_id"
+                                       domain="[('state', '=', 'posted'), ('date', '=', date)]"
+                                       options="{'no_create': True}"/>
+                            </group>
+                            <group>
+                                <field name="state"/>
+                                <field name="source_changed"/>
+                                <field name="source_missing"/>
+                            </group>
+                        </group>
+                        <group string="Review Reason" invisible="not review_reason">
+                            <field name="review_reason" nolabel="1" readonly="1"/>
+                        </group>
+                        <group string="Restricted Fund Purpose">
+                            <field name="restricted_purpose" nolabel="1"
+                                   placeholder="If this expense touches a restricted fund account, document the restricted purpose here before recording."/>
+                        </group>
+                    </page>
+                    <page string="Raw QuickBooks Payload" name="payload"
+                          groups="elksfrs.group_elksfrs_manager">
+                        <p class="text-muted">
+                            The full JSON payload QuickBooks returned for this
+                            transaction, pretty-printed for diagnostics. This is
+                            the authoritative record — the parsed fields above
+                            are read from this payload every time the form is
+                            opened.
+                        </p>
+                        <field name="payload_pretty" nolabel="1" readonly="1"
+                               widget="ace" options="{'mode': 'json'}"/>
+                        <field name="qbo_deep_link" readonly="1" widget="url"/>
+                    </page>
+                </notebook>
+            </sheet>
+            <chatter/>
+        </form>
+        </field>
     </record>
     <record id="qbo_match_form" model="ir.ui.view">
         <field name="name">elks.qbo.match.form</field><field name="model">elks.qbo.match</field>

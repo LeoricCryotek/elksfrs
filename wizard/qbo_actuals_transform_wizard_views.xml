@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_qbo_actuals_transform_wizard_form" model="ir.ui.view">
+        <field name="name">qbo.actuals.transform.wizard.form</field>
+        <field name="model">qbo.actuals.transform.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Transform QBO Export → FRS CSV">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>QBO Export → FRS CSV</h1>
+                        <div class="text-muted">
+                            Convert a QuickBooks Online report export into an
+                            FRS-ready CSV, named per the Elks convention,
+                            ready to email to
+                            <code>adaptive@elks.cloud</code>.
+                            See the <em>Instructions</em> tab below for
+                            step-by-step QBO export guides and the official
+                            Grand Lodge reference PDFs.
+                        </div>
+                    </div>
+
+                    <notebook>
+                        <!-- =============================================
+                             TRANSFORM TAB
+                             ============================================= -->
+                        <page string="Transform" name="transform">
+                            <group invisible="state != 'draft'">
+                                <group string="Report">
+                                    <field name="report_type" widget="radio"/>
+                                    <field name="lodge_number"/>
+                                </group>
+                                <group string="Data Source">
+                                    <field name="source" widget="radio"/>
+                                </group>
+
+                                <!-- QBO-live branch -->
+                                <group string="QuickBooks Connection"
+                                       invisible="source != 'qbo_live'">
+                                    <field name="connection_id"
+                                           options="{'no_create': True}"/>
+                                    <field name="connection_environment"
+                                           readonly="1"/>
+                                </group>
+                                <group string="Period"
+                                       invisible="source != 'qbo_live' or report_type != 'actuals'">
+                                    <field name="period_preset" widget="radio"/>
+                                    <field name="period_start"
+                                           readonly="period_preset != 'custom'"/>
+                                    <field name="period_end"
+                                           readonly="period_preset != 'custom'"/>
+                                </group>
+
+                                <!-- Upload branch -->
+                                <group string="Source File"
+                                       invisible="source != 'upload'">
+                                    <field name="source_file"
+                                           filename="source_filename"
+                                           widget="binary"/>
+                                    <field name="source_filename" invisible="1"/>
+                                    <field name="encoding"/>
+                                </group>
+
+                                <group string="Actuals Options"
+                                       invisible="report_type != 'actuals'">
+                                    <field name="aggregation" widget="radio"/>
+                                </group>
+                                <group string="Balance Sheet Options"
+                                       invisible="report_type != 'balance_sheet'">
+                                    <field name="balance_sheet_as_of"/>
+                                </group>
+                            </group>
+
+                            <!-- Sandbox banner for the live-pull path -->
+                            <div class="alert alert-danger"
+                                 invisible="source != 'qbo_live' or connection_environment != 'sandbox'"
+                                 style="border-left: 6px solid #a40000;">
+                                <strong>⚠ SANDBOX MODE</strong> — the selected
+                                connection is pointing at Intuit's sandbox test
+                                data. Pulling this report will fail with a
+                                clear error — switch the connection to
+                                Production before submitting to Adaptive.
+                            </div>
+
+                            <group invisible="state == 'draft'"
+                                   string="Result">
+                                <group>
+                                    <field name="result_filename" readonly="1"/>
+                                    <field name="result_row_count" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="result_min_date" readonly="1"/>
+                                    <field name="result_max_date" readonly="1"/>
+                                </group>
+                            </group>
+
+                            <field name="report_html" invisible="state == 'draft'"
+                                   readonly="1" nolabel="1"/>
+                        </page>
+
+                        <!-- =============================================
+                             INSTRUCTIONS TAB
+                             ============================================= -->
+                        <page string="Instructions" name="instructions">
+
+                            <!-- QBO Actuals instructions -->
+                            <h3 class="mt-2">
+                                <i class="fa fa-list-ol" title="Steps"/>
+                                Pulling the Actuals report from QuickBooks Online
+                            </h3>
+                            <div class="alert alert-info" role="alert">
+                                Source document:
+                                <a href="/elksfrs/static/description/frs_docs/FRS_QuickBooks_Online_Guide.pdf"
+                                   target="_blank">
+                                    <i class="fa fa-file-pdf-o" title="PDF"/>
+                                    FRS Quick Reference Guide for QuickBooks Online
+                                </a>
+                                (bundled with this module — always matches the
+                                treasurer workflow this wizard expects).
+                            </div>
+
+                            <ol>
+                                <li>
+                                    In QuickBooks Online, open <strong>Reports</strong>
+                                    from the left menu and choose
+                                    <strong>Transaction Detail by Account</strong>
+                                    (under "For my accountant").
+                                </li>
+                                <li>
+                                    Click the three dots to the right of the report title,
+                                    then click <strong>Customize</strong>.
+                                </li>
+                                <li>
+                                    Set <strong>Report period</strong> to the window you
+                                    want to submit:
+                                    <ul>
+                                        <li>For a monthly FRS submission: pick the single
+                                            month (e.g. October 2026).</li>
+                                        <li>For an annual sanity check: pick the Elks
+                                            fiscal year (April 1 → March 31).</li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    Expand <strong>Rows / Columns</strong>, click
+                                    <strong>Change columns</strong>, and set the columns
+                                    in this exact order:
+                                    <ul>
+                                        <li><strong>Account #</strong></li>
+                                        <li><strong>Date</strong></li>
+                                        <li><strong>Debit</strong></li>
+                                        <li><strong>Credit</strong></li>
+                                    </ul>
+                                    Deselect every other column. The wizard also accepts
+                                    exports that keep extra columns, but a clean 4-column
+                                    export is the surest path.
+                                </li>
+                                <li>
+                                    Click <strong>Run report</strong>.
+                                </li>
+                                <li>
+                                    Click the <strong>Export</strong> icon (just left of
+                                    the gear) and choose <strong>Export to Excel</strong>
+                                    (or Export to CSV — either works here).
+                                </li>
+                                <li>
+                                    Save the file somewhere you can find it, then come
+                                    back here, pick <strong>Actuals</strong>, upload the
+                                    file, and click <strong>Transform</strong>.
+                                </li>
+                            </ol>
+
+                            <!-- QBO Balance Sheet instructions -->
+                            <h3 class="mt-4">
+                                <i class="fa fa-list-ol" title="Steps"/>
+                                Pulling the Balance Sheet from QuickBooks Online
+                            </h3>
+                            <div class="alert alert-info" role="alert">
+                                Source documents:
+                                <a href="/elksfrs/static/description/frs_docs/Elks_Balance_Sheet_Reference.pdf"
+                                   target="_blank">
+                                    <i class="fa fa-file-pdf-o" title="PDF"/>
+                                    Elks Accounting: Balance Sheet Reference
+                                </a>
+                                &#160;·&#160;
+                                <a href="/elksfrs/static/description/frs_docs/FRS_Introduction_2019.pdf"
+                                   target="_blank">
+                                    <i class="fa fa-file-pdf-o" title="PDF"/>
+                                    FRS Introduction 2019
+                                </a>
+                                (see "Actual Beginning Balance File" on page 22).
+                            </div>
+
+                            <ol>
+                                <li>
+                                    In QuickBooks Online, open <strong>Reports</strong>
+                                    and choose <strong>Balance Sheet</strong> (under
+                                    "Business overview").
+                                </li>
+                                <li>
+                                    Set <strong>As of</strong> to the snapshot date you
+                                    want to submit — typically <strong>3/31/YYYY</strong>
+                                    for year-end or the FRS Beginning Balance file; any
+                                    date works for internal use.
+                                </li>
+                                <li>
+                                    Click <strong>Customize</strong>. On the
+                                    <strong>General</strong> tab, confirm the "As of" date.
+                                    On the <strong>Rows / Columns</strong> tab, make sure
+                                    <strong>Show account numbers</strong> is checked so
+                                    the GL codes appear in column A.
+                                </li>
+                                <li>
+                                    Click <strong>Run report</strong>.
+                                </li>
+                                <li>
+                                    Click the <strong>Export</strong> icon and choose
+                                    <strong>Export to Excel</strong>.
+                                </li>
+                                <li>
+                                    Save the file, come back here, pick
+                                    <strong>Balance Sheet</strong>, upload, and click
+                                    <strong>Transform</strong>. The wizard auto-detects
+                                    the as-of date from the report title; you can override
+                                    it with the date field.
+                                </li>
+                            </ol>
+
+                            <!-- Submission mechanics -->
+                            <h3 class="mt-4">
+                                <i class="fa fa-paper-plane" title="Submission"/>
+                                Submitting the CSV to Adaptive
+                            </h3>
+                            <div class="alert alert-info" role="alert">
+                                Source document:
+                                <a href="/elksfrs/static/description/frs_docs/FRS_Actuals_and_Budgets.pdf"
+                                   target="_blank">
+                                    <i class="fa fa-file-pdf-o" title="PDF"/>
+                                    FRS Actuals and Budgets (Grand Lodge overview)
+                                </a>
+                            </div>
+                            <ol>
+                                <li>
+                                    Click <strong>Download CSV</strong> above to save
+                                    the file. The suggested filename already matches the
+                                    Elks convention — keep it.
+                                </li>
+                                <li>
+                                    Email the CSV as an attachment to
+                                    <code>adaptive@elks.cloud</code>.
+                                </li>
+                                <li>
+                                    The email <strong>Subject</strong> must contain the
+                                    right keyword or Adaptive will reject it:
+                                    <ul>
+                                        <li>Actuals (monthly or annual) →
+                                            <strong>Actual</strong></li>
+                                        <li>Balance Sheet (one-time Beginning Balance) →
+                                            <strong>Actual</strong>
+                                            (per the 2019 spec, same keyword)</li>
+                                        <li>Budget →
+                                            <strong>Budget</strong>
+                                            (generated by the separate Export FRS CSV
+                                            wizard)</li>
+                                        <li>GL Mapping file →
+                                            <strong>Map</strong></li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    Within ~5 minutes Adaptive replies with either a
+                                    success confirmation or a detailed error list.
+                                </li>
+                                <li>
+                                    <strong>Deadline:</strong> monthly Actuals are due by
+                                    the <strong>3rd Friday</strong> of the month
+                                    <em>following</em> the reporting month (April's
+                                    Actuals are due by the 3rd Friday of May).
+                                </li>
+                            </ol>
+
+                            <!-- Reference docs -->
+                            <h3 class="mt-4">
+                                <i class="fa fa-book" title="References"/>
+                                Reference documents
+                            </h3>
+                            <p>
+                                These PDFs are bundled with the module so they stay
+                                in sync with the parser's expectations. Click any
+                                link to download:
+                            </p>
+                            <ul>
+                                <li>
+                                    <a href="/elksfrs/static/description/frs_docs/FRS_Introduction_2019.pdf"
+                                       target="_blank">
+                                        FRS Introduction 2019 (Morrison &amp; Morrison)
+                                    </a>
+                                    — overall FRS spec, all four file formats
+                                    (Map, Actual, Budget, Beginning Balance),
+                                    submission mechanics.
+                                </li>
+                                <li>
+                                    <a href="/elksfrs/static/description/frs_docs/FRS_QuickBooks_Online_Guide.pdf"
+                                       target="_blank">
+                                        FRS Quick Reference Guide for QuickBooks Online
+                                    </a>
+                                    — step-by-step QBO export walkthroughs for
+                                    Actuals and Budget files. This wizard automates
+                                    every "Formatting the Excel File" step.
+                                </li>
+                                <li>
+                                    <a href="/elksfrs/static/description/frs_docs/FRS_Actuals_and_Budgets.pdf"
+                                       target="_blank">
+                                        FRS Actuals and Budgets
+                                    </a>
+                                    — Grand Lodge FRS overview deck; penalties,
+                                    deadlines, submission etiquette.
+                                </li>
+                                <li>
+                                    <a href="/elksfrs/static/description/frs_docs/Elks_Balance_Sheet_Reference.pdf"
+                                       target="_blank">
+                                        Elks Accounting: Balance Sheet Reference
+                                    </a>
+                                    — which accounts make up each Balance Sheet
+                                    section (Assets / Liabilities / Equity) and
+                                    year-end reconciliation guidance.
+                                </li>
+                            </ul>
+                            <p class="text-muted">
+                                Official Grand Lodge FRS resources also live at
+                                <a href="https://www.elks.org"
+                                   target="_blank">www.elks.org</a>
+                                (search the site for "FRS"). The versions above are the
+                                ones this wizard was written against.
+                            </p>
+                        </page>
+
+                    </notebook>
+
+                    <field name="state" invisible="1"/>
+                    <field name="result_file" invisible="1"/>
+                </sheet>
+                <footer>
+                    <button name="action_transform" type="object"
+                            string="Transform"
+                            class="btn-primary"
+                            invisible="state == 'done'"/>
+                    <button name="action_download" type="object"
+                            string="Download CSV"
+                            class="btn-primary"
+                            invisible="state != 'done'"/>
+                    <button string="Close" class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_qbo_actuals_transform_wizard" model="ir.actions.act_window">
+        <field name="name">Transform QBO Export → FRS CSV</field>
+        <field name="res_model">qbo.actuals.transform.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

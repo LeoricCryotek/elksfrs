@@ -7,9 +7,31 @@
             <form string="FRS CSV Export">
                 <group invisible="state != 'setup'">
                     <field name="export_type" widget="radio"/>
-                    <field name="period_start" invisible="export_type != 'actuals'"/>
-                    <field name="period_end" invisible="export_type != 'actuals'"/>
-                    <field name="budget_id" invisible="export_type != 'budget'"/>
+                </group>
+
+                <!-- Actuals: preset selector + resolved date range -->
+                <div invisible="state != 'setup' or export_type != 'actuals'">
+                    <div class="alert alert-info" role="alert">
+                        <strong>Fiscal YTD is the recommended default.</strong>
+                        Adaptive overwrites prior data on each submission, so
+                        sending the full YTD keeps every backdated correction
+                        in sync automatically. Use <em>Prior Full Month</em>
+                        only when you're explicitly submitting a single month.
+                    </div>
+                    <group>
+                        <field name="period_preset" widget="radio"/>
+                    </group>
+                    <group string="Resolved Date Range">
+                        <field name="period_start"
+                               readonly="period_preset != 'custom'"/>
+                        <field name="period_end"
+                               readonly="period_preset != 'custom'"/>
+                    </group>
+                </div>
+
+                <!-- Budget -->
+                <group invisible="state != 'setup' or export_type != 'budget'">
+                    <field name="budget_id"/>
                 </group>
                 <group invisible="state != 'done'">
                     <div class="alert alert-success" role="alert">

@@ -51,6 +51,7 @@ Features:
         "wizard/qb_pnl_reconcile_wizard_views.xml",
         "wizard/clms_payment_import_wizard_views.xml",
         "wizard/qb_coa_import_wizard_views.xml",
+        "wizard/qbo_actuals_transform_wizard_views.xml",
         "views/elks_budget_amendment_views.xml",
         "views/elks_account_views.xml",
         "views/elks_journal_views.xml",

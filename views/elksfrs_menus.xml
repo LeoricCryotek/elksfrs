@@ -161,6 +161,12 @@
               action="action_frs_export_wizard"
               sequence="30"/>
 
+    <menuitem id="menu_elksfrs_qbo_actuals_transform"
+              name="QBO Export → FRS CSV"
+              parent="menu_elksfrs_reporting"
+              action="action_qbo_actuals_transform_wizard"
+              sequence="32"/>
+
     <!-- ===== Import ===== -->
     <menuitem id="menu_elksfrs_import"
               name="Import"

@@ -138,6 +138,33 @@ class ElksBudget(models.Model):
         sanitize=False,
     )
 
+    # ------------------------------------------------------------------
+    # "Business at a Glance" — mirrors QuickBooks Online's dashboard
+    # ------------------------------------------------------------------
+    qbo_bank_accounts_html = fields.Html(
+        "Bank Accounts (QBO)", compute='_compute_qbo_bank_accounts_html',
+        sanitize=False,
+        help="List of QBO bank and credit-card accounts with their "
+             "cached balances from the most recent pull.",
+    )
+    qbo_pl_summary_html = fields.Html(
+        "P&L Last Month (QBO)", compute='_compute_qbo_pl_summary_html',
+        sanitize=False,
+    )
+    qbo_needs_attention_html = fields.Html(
+        "Needs Attention (QBO)", compute='_compute_qbo_needs_attention_html',
+        sanitize=False,
+    )
+    qbo_quick_links_html = fields.Html(
+        "QBO Quick Links", compute='_compute_qbo_quick_links_html',
+        sanitize=False,
+    )
+    qbo_connection_id = fields.Many2one(
+        'elks.qbo.connection', compute='_compute_qbo_connection',
+        help="The active QBO connection, if any. Used by the dashboard "
+             "tiles to show source attribution and last-sync time.",
+    )
+
     # CSV export
     csv_file = fields.Binary("Budget CSV", readonly=True)
     csv_filename = fields.Char("CSV Filename")
@@ -1047,6 +1074,218 @@ class ElksBudget(models.Model):
         count = self.env.cr.rowcount
         if count:
             _logger.info("Migrated %d budgets from 'approved' → 'board_approved'", count)
+
+
+    # ==================================================================
+    # Business at a Glance — QBO dashboard tiles
+    # (mirrors QuickBooks Online's own "Business at a Glance" layout)
+    # ==================================================================
+    @api.depends_context('company')
+    def _compute_qbo_connection(self):
+        Conn = self.env['elks.qbo.connection']
+        for rec in self:
+            rec.qbo_connection_id = Conn.search(
+                [('active', '=', True), ('connected', '=', True)],
+                limit=1).id
+
+    @api.depends('qbo_connection_id')
+    def _compute_qbo_bank_accounts_html(self):
+        import html as _h
+        for rec in self:
+            conn = rec.qbo_connection_id
+            if not conn:
+                rec.qbo_bank_accounts_html = (
+                    "<div class='text-muted text-center p-3'>"
+                    "No active QuickBooks connection. "
+                    "<a href='#' data-method='_open_qbo_connection'>Connect</a> "
+                    "to see bank balances here.</div>")
+                continue
+            maps = self.env['elks.qbo.account.map'].search([
+                ('connection_id', '=', conn.id),
+                ('is_bank_or_cc', '=', True),
+            ], order='source_type, last_known_balance desc, name')
+            if not maps:
+                rec.qbo_bank_accounts_html = (
+                    "<div class='text-muted text-center p-3'>"
+                    "No bank or credit-card accounts synced yet. "
+                    "Click <em>Pull Expenses</em> on the connection to "
+                    "populate.</div>")
+                continue
+            total = sum(maps.mapped('last_known_balance'))
+            currency = conn.company_id.currency_id.symbol or '$'
+            rows = []
+            for m in maps:
+                name = _h.escape(m.name or '')
+                bal = m.last_known_balance or 0.0
+                bal_color = '#060' if bal >= 0 else '#c00'
+                src = _h.escape(m.source_type or '')
+                mapped_badge = ''
+                if m.account_id:
+                    mapped_badge = (
+                        f"<span class='badge bg-success' style='font-size:.7em;'>"
+                        f"→ {_h.escape(m.account_id.code or '')}</span>")
+                else:
+                    mapped_badge = (
+                        "<span class='badge bg-warning' style='font-size:.7em;'>"
+                        "unmapped</span>")
+                rows.append(
+                    f"<tr>"
+                    f"<td style='padding:4px 8px;'>{name}</td>"
+                    f"<td style='text-align:right; color:{bal_color};"
+                    f" padding:4px 8px;'>{currency}{bal:,.2f}</td>"
+                    f"<td style='padding:4px 8px;'><small class='text-muted'>{src}</small> {mapped_badge}</td>"
+                    f"</tr>"
+                )
+            last_sync = (conn.last_sync.strftime('%Y-%m-%d %H:%M')
+                         if conn.last_sync else 'never')
+            rec.qbo_bank_accounts_html = (
+                f"<div>"
+                f"<div class='d-flex justify-content-between align-items-baseline mb-2'>"
+                f"<strong>Total: {currency}{total:,.2f}</strong>"
+                f"<small class='text-muted'>As of last pull: {last_sync}</small>"
+                f"</div>"
+                f"<table style='width:100%; font-size:.9em;'>"
+                f"<tbody>{''.join(rows)}</tbody>"
+                f"</table>"
+                f"</div>"
+            )
+
+    @api.depends('qbo_connection_id', 'line_ids.actual_amount')
+    def _compute_qbo_pl_summary_html(self):
+        """Last-month income / expense / net for a quick pulse check."""
+        import html as _h
+        from datetime import date, timedelta
+        for rec in self:
+            today = fields.Date.context_today(self)
+            first_of_this_month = today.replace(day=1)
+            last_month_end = first_of_this_month - timedelta(days=1)
+            last_month_start = last_month_end.replace(day=1)
+            lines = self.env['elks.journal.entry.line'].search([
+                ('date', '>=', last_month_start),
+                ('date', '<=', last_month_end),
+                ('entry_state', '=', 'posted'),
+            ])
+            income = sum(l.credit - l.debit for l in lines
+                         if l.account_id.account_type == 'income')
+            expense = sum(l.debit - l.credit for l in lines
+                          if l.account_id.account_type in ('expense', 'cogs'))
+            net = income - expense
+            currency = (rec.qbo_connection_id.company_id.currency_id.symbol
+                        if rec.qbo_connection_id else '$')
+            net_color = '#060' if net >= 0 else '#c00'
+            label = last_month_start.strftime('%B %Y')
+            rec.qbo_pl_summary_html = (
+                f"<div>"
+                f"<div class='text-muted small mb-2'>{_h.escape(label)}</div>"
+                f"<div style='display:flex; justify-content:space-between; padding:4px 0;'>"
+                f"  <span>Income</span>"
+                f"  <strong style='color:#060;'>{currency}{income:,.2f}</strong>"
+                f"</div>"
+                f"<div style='display:flex; justify-content:space-between; padding:4px 0;'>"
+                f"  <span>Expenses</span>"
+                f"  <strong style='color:#c00;'>{currency}{expense:,.2f}</strong>"
+                f"</div>"
+                f"<hr style='margin:.5em 0;'/>"
+                f"<div style='display:flex; justify-content:space-between; padding:4px 0;'>"
+                f"  <strong>Net</strong>"
+                f"  <strong style='color:{net_color}; font-size:1.1em;'>"
+                f"    {currency}{net:,.2f}"
+                f"  </strong>"
+                f"</div>"
+                f"</div>"
+            )
+
+    @api.depends('qbo_connection_id')
+    def _compute_qbo_needs_attention_html(self):
+        import html as _h
+        for rec in self:
+            conn = rec.qbo_connection_id
+            if not conn:
+                rec.qbo_needs_attention_html = (
+                    "<div class='text-muted text-center p-3'>"
+                    "No active QuickBooks connection.</div>")
+                continue
+            Expense = self.env['elks.qbo.expense']
+            review_count = Expense.search_count([
+                ('connection_id', '=', conn.id),
+                ('journal_id', '=', False),
+                ('source_missing', '=', False),
+                ('source_changed', '=', False),
+            ])
+            source_changed_count = Expense.search_count([
+                ('connection_id', '=', conn.id),
+                ('source_changed', '=', True),
+            ])
+            source_missing_count = Expense.search_count([
+                ('connection_id', '=', conn.id),
+                ('source_missing', '=', True),
+            ])
+            items = []
+            if review_count:
+                items.append(
+                    f"<li><strong>{review_count}</strong> pending expense(s) "
+                    f"to review / auto-post</li>")
+            if source_changed_count:
+                items.append(
+                    f"<li><strong>{source_changed_count}</strong> expense(s) "
+                    f"changed in QuickBooks after we recorded them — "
+                    f"treasurer review needed</li>")
+            if source_missing_count:
+                items.append(
+                    f"<li><strong>{source_missing_count}</strong> expense(s) "
+                    f"no longer returned by QBO (deleted/voided?)</li>")
+            if conn.last_error:
+                items.append(
+                    f"<li style='color:#c00;'><strong>Last pull error:</strong> "
+                    f"{_h.escape(conn.last_error[:200])}</li>")
+            if not items:
+                rec.qbo_needs_attention_html = (
+                    "<div class='text-success text-center p-3'>"
+                    "<i class='fa fa-check-circle fa-2x mb-2' title='All clear'/>"
+                    "<br/><strong>All clear.</strong><br/>"
+                    "<small>No QBO items need attention.</small></div>")
+            else:
+                rec.qbo_needs_attention_html = (
+                    f"<ul style='padding-left:1.2em; margin-bottom:0;'>"
+                    f"{''.join(items)}</ul>")
+
+    @api.depends('qbo_connection_id')
+    def _compute_qbo_quick_links_html(self):
+        for rec in self:
+            conn = rec.qbo_connection_id
+            if not conn:
+                rec.qbo_quick_links_html = (
+                    "<div class='text-muted text-center p-3'>"
+                    "Connect QuickBooks under <em>QuickBooks Online → "
+                    "Connections and Mapping</em> to enable quick links."
+                    "</div>")
+                continue
+            env_badge = ''
+            if (conn.environment or '').lower() == 'sandbox':
+                env_badge = (
+                    "<div class='alert alert-danger p-2 mb-2' "
+                    "style='font-size:.85em;'>"
+                    "⚠ Sandbox mode — writes are disabled.</div>")
+            rec.qbo_quick_links_html = (
+                f"{env_badge}"
+                f"<div class='d-flex flex-column gap-2'>"
+                f"<a href='/odoo/action-elksfrs.qbo_action_connections/{conn.id}'"
+                f"   class='btn btn-outline-primary btn-sm'>"
+                f"  <i class='fa fa-link' title='Connection'/>"
+                f"  Open QuickBooks Connection"
+                f"</a>"
+                f"<a href='/odoo/action-elksfrs.qbo_action_expenses'"
+                f"   class='btn btn-outline-primary btn-sm'>"
+                f"  <i class='fa fa-list' title='Expenses'/>"
+                f"  Review Expenses"
+                f"</a>"
+                f"<a href='/odoo/action-elksfrs.action_qbo_actuals_transform_wizard'"
+                f"   class='btn btn-outline-success btn-sm'>"
+                f"  <i class='fa fa-file-text-o' title='FRS'/>"
+                f"  Generate FRS Report"
+                f"</a>"
+                f"</div>"
+            )
 
 
 class ElksBudgetLine(models.Model):
