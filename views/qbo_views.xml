@@ -24,6 +24,11 @@
                         help="Pull live from QBO Reports API and produce the FRS Actuals CSV in one click."/>
                 <button name="action_disconnect" type="object" string="Disconnect"
                         groups="base.group_system"/>
+                <button name="action_purge_all_data" type="object"
+                        string="Purge All QBO Data"
+                        groups="base.group_system"
+                        class="btn-danger"
+                        confirm="DELETE every pulled QBO expense, every account and vendor mapping, and reset the connection. Only blocks if any expenses are already recorded to the FRS ledger. Cannot be undone — are you sure?"/>
             </header>
             <sheet>
                 <!-- SANDBOX MODE — unmissable banner so nobody confuses

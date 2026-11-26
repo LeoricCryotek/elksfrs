@@ -82,6 +82,58 @@ class Connection(models.Model):
                 ('source_changed', '=', False),
             ])
 
+    def action_purge_all_data(self):
+        """Nuke every expense, mapping, and token for this connection.
+
+        For when the admin has decided not to use the QBO integration
+        (or wants to wipe sandbox leftovers before switching to
+        production). Blocks if any expenses have been recorded to the
+        FRS ledger — those represent real audit trail that shouldn't
+        vanish without a specific reversal.
+        """
+        self.ensure_one()
+        if not self.env.user.has_group('base.group_system'):
+            raise AccessError(_(
+                'Only administrators can purge QuickBooks data.'))
+        Expense = self.env['elks.qbo.expense'].sudo()
+        recorded = Expense.search_count([
+            ('connection_id', '=', self.id),
+            ('journal_id', '!=', False),
+        ])
+        if recorded:
+            raise UserError(_(
+                "Can't purge: %s expense(s) are already recorded to the "
+                "FRS ledger. Cancel their journal entries first if you "
+                "really want to reset — those represent real audit "
+                "trail.") % recorded)
+        # Count what we're about to wipe for the toast message.
+        exp_count = Expense.search_count([('connection_id', '=', self.id)])
+        map_count = len(self.mapping_ids) + len(self.vendor_ids)
+        # Delete everything in dependency order: expenses first, then
+        # the mappings they reference, then clear the OAuth state.
+        Expense.search([('connection_id', '=', self.id)]).unlink()
+        self.mapping_ids.sudo().unlink()
+        self.vendor_ids.sudo().unlink()
+        self.sudo().write({
+            'access_token': False,
+            'refresh_token': False,
+            'expires_at': False,
+            'connected': False,
+            'realm_id': False,
+            'last_sync': False,
+            'last_error': False,
+        })
+        return {'type': 'ir.actions.client', 'tag': 'display_notification',
+                'params': {
+                    'title': _('QuickBooks data purged'),
+                    'message': _(
+                        '%(exp)s expense(s) and %(maps)s mapping(s) '
+                        'deleted. Connection reset — you can now change '
+                        'Environment and reconnect, or leave it inactive.'
+                    ) % {'exp': exp_count, 'maps': map_count},
+                    'type': 'success', 'sticky': False,
+                }}
+
     def action_generate_frs_report(self):
         """Open the QBO → FRS transform wizard pre-loaded for live pull.
 

@@ -58,4 +58,5 @@ qbo_vendor_user,QBO vendor read,model_elks_qbo_vendor_map,elksfrs.group_elksfrs_
 qbo_vendor_manager,QBO vendor mapping,model_elks_qbo_vendor_map,elksfrs.group_elksfrs_manager,1,1,1,0
 qbo_expense_user,QBO expense read,model_elks_qbo_expense,elksfrs.group_elksfrs_user,1,0,0,0
 qbo_expense_manager,QBO expense manager,model_elks_qbo_expense,elksfrs.group_elksfrs_manager,1,1,1,0
+qbo_expense_admin,QBO expense admin unlink,model_elks_qbo_expense,base.group_system,1,1,1,1
 qbo_match_manager,QBO match wizard,model_elks_qbo_match,elksfrs.group_elksfrs_manager,1,1,1,1

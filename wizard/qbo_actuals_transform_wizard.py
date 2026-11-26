@@ -866,6 +866,16 @@ class QboActualsTransformWizard(models.TransientModel):
             'result_max_date': result['max_date'],
             'report_html': self._build_report_html(result),
         })
+        # Reopen the wizard so the form flips from Draft to Done and the
+        # Download CSV button shows up. Without this return the dialog
+        # just sits on the Draft screen even though the record is Done.
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': self._name,
+            'res_id': self.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
 
     # ------------------------------------------------------------------
     # Source branch: Pull live from QBO Reports API
