@@ -61,8 +61,13 @@
                                     <field name="encoding"/>
                                 </group>
 
-                                <group string="Actuals Options"
-                                       invisible="report_type != 'actuals'">
+                                <group string="What to do"
+                                       colspan="2">
+                                    <field name="import_to_odoo"/>
+                                    <field name="prepare_frs_file"/>
+                                </group>
+                                <group string="FRS CSV Aggregation (when preparing CSV)"
+                                       invisible="report_type != 'actuals' or prepare_frs_file == 'no'">
                                     <field name="aggregation" widget="radio"/>
                                 </group>
                                 <group string="Balance Sheet Options"
@@ -84,11 +89,17 @@
 
                             <group invisible="state == 'draft'"
                                    string="Result">
-                                <group>
+                                <group string="Imported to Odoo"
+                                       invisible="not import_to_odoo">
+                                    <field name="import_jes_created" readonly="1"/>
+                                    <field name="import_jes_draft" readonly="1"/>
+                                    <field name="import_jes_skipped" readonly="1"/>
+                                    <field name="import_balances_updated" readonly="1"/>
+                                </group>
+                                <group string="FRS CSV"
+                                       invisible="prepare_frs_file == 'no'">
                                     <field name="result_filename" readonly="1"/>
                                     <field name="result_row_count" readonly="1"/>
-                                </group>
-                                <group>
                                     <field name="result_min_date" readonly="1"/>
                                     <field name="result_max_date" readonly="1"/>
                                 </group>
@@ -340,13 +351,13 @@
                 </sheet>
                 <footer>
                     <button name="action_transform" type="object"
-                            string="Transform"
+                            string="Import / Transform"
                             class="btn-primary"
                             invisible="state == 'done'"/>
                     <button name="action_download" type="object"
                             string="Download CSV"
                             class="btn-primary"
-                            invisible="state != 'done'"/>
+                            invisible="state != 'done' or not result_file"/>
                     <button string="Close" class="btn-secondary"
                             special="cancel"/>
                 </footer>

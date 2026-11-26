@@ -1113,38 +1113,86 @@ class ElksBudget(models.Model):
                 continue
             total = sum(maps.mapped('last_known_balance'))
             currency = conn.company_id.currency_id.symbol or '$'
+            # Precompute Odoo-derived balance per mapped elks.account:
+            # sum(debit - credit) across all posted journal lines.
+            Line = self.env['elks.journal.entry.line']
+            odoo_balance_by_account_id = {}
+            mapped_account_ids = [m.account_id.id for m in maps if m.account_id]
+            if mapped_account_ids:
+                grouped = Line.sudo().read_group(
+                    [('account_id', 'in', mapped_account_ids),
+                     ('entry_state', '=', 'posted')],
+                    ['account_id', 'debit:sum', 'credit:sum'],
+                    ['account_id'])
+                for row in grouped:
+                    aid = row['account_id'][0]
+                    odoo_balance_by_account_id[aid] = (
+                        (row.get('debit') or 0.0) - (row.get('credit') or 0.0))
             rows = []
             for m in maps:
                 name = _h.escape(m.name or '')
-                bal = m.last_known_balance or 0.0
-                bal_color = '#060' if bal >= 0 else '#c00'
+                qbo_bal = m.last_known_balance or 0.0
+                qbo_color = '#060' if qbo_bal >= 0 else '#c00'
+                odoo_bal = (odoo_balance_by_account_id.get(m.account_id.id, 0.0)
+                            if m.account_id else 0.0)
+                odoo_color = '#060' if odoo_bal >= 0 else '#c00'
+                drift = qbo_bal - odoo_bal
+                drift_color = ('#888' if abs(drift) < 0.01
+                               else '#c00' if abs(drift) >= 1
+                               else '#c90')
+                drift_badge = (
+                    f"<small style='color:{drift_color};'>"
+                    f"Δ {currency}{drift:+,.2f}"
+                    f"</small>"
+                ) if m.account_id and abs(drift) >= 0.01 else (
+                    "<small style='color:#060;'>✓ match</small>"
+                    if m.account_id else
+                    "<small class='text-muted'>no mapping → no drift check</small>"
+                )
                 src = _h.escape(m.source_type or '')
-                mapped_badge = ''
-                if m.account_id:
-                    mapped_badge = (
-                        f"<span class='badge bg-success' style='font-size:.7em;'>"
-                        f"→ {_h.escape(m.account_id.code or '')}</span>")
-                else:
-                    mapped_badge = (
-                        "<span class='badge bg-warning' style='font-size:.7em;'>"
-                        "unmapped</span>")
+                mapped_badge = (
+                    f"<span class='badge bg-success' style='font-size:.7em;'>"
+                    f"→ {_h.escape(m.account_id.code or '')}</span>"
+                    if m.account_id else
+                    "<span class='badge bg-warning' style='font-size:.7em;'>"
+                    "unmapped</span>"
+                )
                 rows.append(
                     f"<tr>"
-                    f"<td style='padding:4px 8px;'>{name}</td>"
-                    f"<td style='text-align:right; color:{bal_color};"
-                    f" padding:4px 8px;'>{currency}{bal:,.2f}</td>"
-                    f"<td style='padding:4px 8px;'><small class='text-muted'>{src}</small> {mapped_badge}</td>"
+                    f"<td style='padding:4px 8px;'>"
+                    f"{name}<br/>"
+                    f"<small class='text-muted'>{src}</small> {mapped_badge}"
+                    f"</td>"
+                    f"<td style='text-align:right; padding:4px 8px;'>"
+                    f"<div style='color:{qbo_color};'>"
+                    f"{currency}{qbo_bal:,.2f}</div>"
+                    f"<small class='text-muted'>QBO</small>"
+                    f"</td>"
+                    f"<td style='text-align:right; padding:4px 8px;'>"
+                    f"<div style='color:{odoo_color};'>"
+                    f"{currency}{odoo_bal:,.2f}</div>"
+                    f"<small class='text-muted'>Odoo</small>"
+                    f"</td>"
+                    f"<td style='text-align:right; padding:4px 8px;'>"
+                    f"{drift_badge}"
+                    f"</td>"
                     f"</tr>"
                 )
             last_sync = (conn.last_sync.strftime('%Y-%m-%d %H:%M')
-                         if conn.last_sync else 'never')
+                         if conn.last_sync else 'last upload')
             rec.qbo_bank_accounts_html = (
                 f"<div>"
                 f"<div class='d-flex justify-content-between align-items-baseline mb-2'>"
-                f"<strong>Total: {currency}{total:,.2f}</strong>"
-                f"<small class='text-muted'>As of last pull: {last_sync}</small>"
+                f"<strong>Total (QBO): {currency}{total:,.2f}</strong>"
+                f"<small class='text-muted'>Cached {last_sync}</small>"
                 f"</div>"
-                f"<table style='width:100%; font-size:.9em;'>"
+                f"<table style='width:100%; font-size:.85em;'>"
+                f"<thead><tr>"
+                f"<th style='text-align:left; padding:2px 8px;'>Account</th>"
+                f"<th style='text-align:right; padding:2px 8px;'>QBO</th>"
+                f"<th style='text-align:right; padding:2px 8px;'>Odoo</th>"
+                f"<th style='text-align:right; padding:2px 8px;'>Drift</th>"
+                f"</tr></thead>"
                 f"<tbody>{''.join(rows)}</tbody>"
                 f"</table>"
                 f"</div>"

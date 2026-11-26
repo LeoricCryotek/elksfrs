@@ -13,6 +13,7 @@
                 <field name="total_credit" sum="Total Credit"/>
                 <field name="is_balanced" column_invisible="True"/>
                 <field name="lodge_year"/>
+                <field name="purchase_id" optional="show"/>
                 <field name="state" widget="badge"
                        decoration-info="state == 'draft'"
                        decoration-success="state == 'posted'"
@@ -35,6 +36,13 @@
                             invisible="state != 'draft'"/>
                     <button name="action_draft" type="object" string="Reset to Draft"
                             invisible="state not in ('posted', 'cancelled')"/>
+                    <button name="action_match_po" type="object"
+                            string="Match PO" icon="fa-link"
+                            invisible="purchase_id"/>
+                    <button name="action_unlink_po" type="object"
+                            string="Unlink PO" icon="fa-unlink"
+                            invisible="not purchase_id"
+                            confirm="Remove the PO link from this entry?"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,posted"/>
                 </header>
@@ -47,6 +55,8 @@
                         <group>
                             <field name="date" readonly="state != 'draft'"/>
                             <field name="lodge_year"/>
+                            <field name="purchase_id" readonly="1"
+                                   options="{'no_create': True}"/>
                         </group>
                         <group>
                             <field name="total_debit"/>

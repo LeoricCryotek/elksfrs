@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_journal_po_match_wizard_form" model="ir.ui.view">
+        <field name="name">elks.journal.po.match.wizard.form</field>
+        <field name="model">elks.journal.po.match.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Match PO to Journal Entry">
+                <sheet>
+                    <div class="oe_title">
+                        <h2>Find a PO to link to this journal entry</h2>
+                        <p class="text-muted">
+                            Adjust filters below. Candidates refresh when you
+                            tab out of a field. Pick one in "Select PO to Link"
+                            and press <strong>Link PO</strong>.
+                        </p>
+                    </div>
+                    <group>
+                        <group string="Journal Entry">
+                            <field name="entry_id" readonly="1"/>
+                            <field name="entry_date" readonly="1"/>
+                            <field name="entry_memo" readonly="1"/>
+                        </group>
+                        <group string="Filters">
+                            <field name="amount"/>
+                            <field name="tolerance"/>
+                            <field name="partner_id"
+                                   options="{'no_create': True}"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="only_open"/>
+                        </group>
+                    </group>
+                    <group string="Candidate POs">
+                        <field name="candidate_ids" nolabel="1" colspan="2"
+                               readonly="1">
+                            <list>
+                                <field name="name"/>
+                                <field name="partner_id"/>
+                                <field name="date_order"/>
+                                <field name="amount_total"
+                                       widget="monetary"/>
+                                <field name="state" widget="badge"/>
+                            </list>
+                        </field>
+                    </group>
+                    <group>
+                        <field name="purchase_id"
+                               options="{'no_create': True}"
+                               domain="[('id', 'in', candidate_ids)]"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_link" type="object"
+                            string="Link PO" class="btn-primary"/>
+                    <button name="action_refresh" type="object"
+                            string="Refresh Candidates"/>
+                    <button string="Cancel" class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

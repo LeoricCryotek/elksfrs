@@ -165,6 +165,7 @@
                             <separator string="Cash Management GL Codes"/>
                             <field name="default_cash_gl_code"/>
                             <field name="default_checking_gl_code"/>
+                            <field name="qbo_import_clearing_gl_code"/>
                         </group>
                     </group>
                     <group string="Lodge Branding">

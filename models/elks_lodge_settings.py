@@ -148,6 +148,20 @@ class ElksLodgeSettings(models.Model):
              "Lewiston Lodge uses: 10201 (S18 Non-Profit Checking).",
     )
 
+    qbo_import_clearing_gl_code = fields.Char(
+        "QBO Import Clearing GL Code",
+        default='29999',
+        required=True,
+        help="GL account used as the offsetting leg for QuickBooks imports. "
+             "Each imported transaction posts the account hit on one side and "
+             "this clearing account on the other, so entries balance and can "
+             "be posted. Reconcile this account to zero when the import run "
+             "is complete.\n\n"
+             "Create a dedicated liability-style account (e.g. 29999 'QBO "
+             "Import Clearing') so you can see at a glance whether any legs "
+             "are unmatched.",
+    )
+
     # FRS submission email
     frs_email = fields.Char(
         "FRS Submission Email",

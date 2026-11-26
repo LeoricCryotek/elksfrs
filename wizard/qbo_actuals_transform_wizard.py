@@ -768,6 +768,42 @@ class QboActualsTransformWizard(models.TransientModel):
     ], default='utf-8-sig', string='CSV Encoding',
        help="Only used for .csv inputs; ignored for .xlsx.")
 
+    # ------------------------------------------------------------------
+    # Import mode — default behavior. Writes into Odoo so the ledger
+    # reflects QBO data; FRS exports then pull from Odoo natively.
+    # ------------------------------------------------------------------
+    import_to_odoo = fields.Boolean(
+        'Import into Odoo', default=True,
+        help="Default. Upload parses the file and creates matching "
+             "records in Odoo:\n"
+             "  • Transaction Detail  → elks.journal.entry records "
+             "(auto-posted when all accounts resolve; draft for review "
+             "otherwise). Dedupes by content hash, so re-uploading the "
+             "same file is safe — nothing duplicates.\n"
+             "  • Balance Sheet       → updates the cached balance on "
+             "each elks.qbo.account.map row so the dashboard's Bank "
+             "Accounts tile stays fresh.\n\n"
+             "Uncheck this to only produce the FRS CSV (old behavior).",
+    )
+    prepare_frs_file = fields.Selection([
+        ('no',       'No — just import, no CSV'),
+        ('ytd',      'Yes — Fiscal YTD (default for monthly FRS submissions)'),
+        ('monthly',  'Yes — Prior Full Month only'),
+        ('annual',   'Yes — Full fiscal year'),
+    ], default='no', string='Prepare FRS CSV too?',
+       help="After importing, also produce the FRS-ready CSV for "
+            "emailing to adaptive@elks.cloud.\n\n"
+            "YTD is recommended because Adaptive overwrites prior "
+            "data on each submission — sending the full year every "
+            "month keeps all corrections in sync automatically.")
+
+    # Results of the import pass
+    import_jes_created = fields.Integer('Journal Entries Created', readonly=True)
+    import_jes_posted = fields.Integer('Journal Entries Auto-Posted', readonly=True)
+    import_jes_draft = fields.Integer('Journal Entries Left in Draft', readonly=True)
+    import_jes_skipped = fields.Integer('Journal Entries Skipped (duplicates)', readonly=True)
+    import_balances_updated = fields.Integer('Account Balances Updated', readonly=True)
+
     # Results
     state = fields.Selection([
         ('draft', 'Ready'),
@@ -849,22 +885,80 @@ class QboActualsTransformWizard(models.TransientModel):
     # ==================================================================
     def action_transform(self):
         self.ensure_one()
+        if not self.import_to_odoo and self.prepare_frs_file == 'no':
+            raise UserError(_(
+                "Pick at least one: 'Import into Odoo' and/or "
+                "'Prepare FRS CSV too?'. The wizard needs something "
+                "to do."))
+
+        # Parse the source ONCE — both import and CSV use the same rows.
         if self.source == 'qbo_live':
-            result = self._transform_from_qbo_live()
+            parsed = self._parse_from_qbo_live()
         else:
-            result = self._transform_from_upload()
-        # Rename to the FRS-canonical convention (matches the PDF
-        # section titles so submissions are instantly recognizable).
-        result['suggested_filename'] = self._frs_canonical_filename(result)
+            parsed = self._parse_from_upload()
+
+        # Import pass (optional, default on)
+        stats = {'created': 0, 'posted': 0, 'draft': 0,
+                 'skipped': 0, 'balances': 0}
+        if self.import_to_odoo:
+            if self.report_type == 'actuals':
+                stats.update(self._import_actuals_to_odoo(parsed.get('txns', [])))
+            else:
+                stats.update(self._import_balance_sheet_to_odoo(
+                    parsed.get('accounts', []), parsed.get('as_of')))
+
+        # CSV pass (optional)
+        result = {
+            'csv_bytes': b'', 'suggested_filename': '',
+            'row_count': 0, 'min_date': None, 'max_date': None,
+            'skipped': parsed.get('skipped', []),
+        }
+        if self.prepare_frs_file != 'no':
+            # Map the "Prepare FRS File" selector to an aggregation.
+            # YTD = per-transaction (full detail); monthly = rollup;
+            # annual = FYE rollup.
+            saved_agg = self.aggregation
+            self.aggregation = {
+                'ytd': 'transaction',
+                'monthly': 'monthly',
+                'annual': 'annual',
+            }.get(self.prepare_frs_file, saved_agg)
+            try:
+                if self.report_type == 'balance_sheet':
+                    result = self._build_balance_sheet_csv(
+                        parsed.get('accounts', []),
+                        parsed.get('skipped', []),
+                        parsed.get('as_of'))
+                else:
+                    result = self._build_actuals_csv(
+                        parsed.get('txns', []),
+                        parsed.get('skipped', []))
+                result['suggested_filename'] = self._frs_canonical_filename(result)
+            finally:
+                self.aggregation = saved_agg
+        else:
+            # No CSV; fill in date bounds from parsed data for the report.
+            if parsed.get('txns'):
+                result['min_date'] = min(t['date'] for t in parsed['txns'])
+                result['max_date'] = max(t['date'] for t in parsed['txns'])
+            elif parsed.get('as_of'):
+                result['min_date'] = parsed['as_of']
+                result['max_date'] = parsed['as_of']
 
         self.write({
             'state': 'done',
-            'result_file': base64.b64encode(result['csv_bytes']),
-            'result_filename': result['suggested_filename'],
+            'result_file': (base64.b64encode(result['csv_bytes'])
+                            if result['csv_bytes'] else False),
+            'result_filename': result['suggested_filename'] or '',
             'result_row_count': result['row_count'],
             'result_min_date': result['min_date'],
             'result_max_date': result['max_date'],
-            'report_html': self._build_report_html(result),
+            'import_jes_created': stats['created'],
+            'import_jes_posted': stats['posted'],
+            'import_jes_draft': stats['draft'],
+            'import_jes_skipped': stats['skipped'],
+            'import_balances_updated': stats['balances'],
+            'report_html': self._build_report_html(result, import_stats=stats),
         })
         # Reopen the wizard so the form flips from Draft to Done and the
         # Download CSV button shows up. Without this return the dialog
@@ -896,6 +990,10 @@ class QboActualsTransformWizard(models.TransientModel):
         return self._pull_actuals()
 
     def _pull_actuals(self):
+        txns, skipped = self._parse_qbo_live_actuals()
+        return self._build_actuals_csv(txns, skipped)
+
+    def _parse_qbo_live_actuals(self):
         from ..models.qbo import reports as _qbo_reports
         if not self.period_start or not self.period_end:
             raise UserError(_('Pick a period before pulling.'))
@@ -917,9 +1015,13 @@ class QboActualsTransformWizard(models.TransientModel):
                 "%(end)s. Verify the period and that posted transactions "
                 "exist in QBO for that range."
             ) % {'start': self.period_start, 'end': self.period_end})
-        return self._build_actuals_csv(txns, skipped)
+        return txns, skipped
 
     def _pull_balance_sheet(self):
+        as_of, accounts, skipped = self._parse_qbo_live_balance_sheet()
+        return self._build_balance_sheet_csv(accounts, skipped, as_of)
+
+    def _parse_qbo_live_balance_sheet(self):
         from ..models.qbo import reports as _qbo_reports
         as_of = self.balance_sheet_as_of or fields.Date.context_today(self)
         json_data = self.connection_id._report('BalanceSheet', {
@@ -937,8 +1039,58 @@ class QboActualsTransformWizard(models.TransientModel):
                 "QuickBooks returned no balance-sheet accounts as of %s. "
                 "Make sure 'Show account numbers' is enabled in QBO's "
                 "Account and Settings → Advanced.") % as_of)
-        return self._build_balance_sheet_csv(
-            accounts, skipped, detected_as_of or as_of)
+        return (detected_as_of or as_of), accounts, skipped
+
+    # ==================================================================
+    # Shared parse interface — produces the dict that both CSV build
+    # and Odoo-import paths consume.
+    # ==================================================================
+    def _parse_from_qbo_live(self):
+        """Pull and parse from QBO live; return normalized dict."""
+        if not self.connection_id:
+            raise UserError(_('Pick a QuickBooks connection first.'))
+        if (self.connection_id.environment or '').lower() == 'sandbox':
+            raise UserError(_('Switch the connection to Production first.'))
+        if self.report_type == 'balance_sheet':
+            as_of, accounts, skipped = self._parse_qbo_live_balance_sheet()
+            return {'accounts': accounts, 'as_of': as_of,
+                    'skipped': skipped, 'txns': []}
+        txns, skipped = self._parse_qbo_live_actuals()
+        return {'txns': txns, 'skipped': skipped,
+                'accounts': [], 'as_of': None}
+
+    def _parse_from_upload(self):
+        """Parse the uploaded Excel/CSV; return normalized dict."""
+        if not self.source_file:
+            raise UserError(_('Upload a QBO export file.'))
+        raw = base64.b64decode(self.source_file)
+        fn = self.source_filename or 'qbo_export.xlsx'
+        try:
+            if self.report_type == 'balance_sheet':
+                # Use the pure function + capture what it parsed
+                is_xlsx = fn.lower().endswith(('.xlsx', '.xlsm', '.xls'))
+                rows = (_read_xlsx(raw) if is_xlsx
+                        else _read_csv(raw, self.encoding))
+                detected = _detect_balance_sheet_date(rows)
+                as_of = self.balance_sheet_as_of or detected or fields.Date.context_today(self)
+                accounts, skipped = _extract_balance_sheet_rows(rows)
+                if not accounts:
+                    raise UserError(_(
+                        "No balance-sheet accounts found in the file."))
+                return {'accounts': accounts, 'as_of': as_of,
+                        'skipped': skipped, 'txns': []}
+            # Actuals
+            is_xlsx = fn.lower().endswith(('.xlsx', '.xlsm', '.xls'))
+            rows = (_read_xlsx(raw) if is_xlsx
+                    else _read_csv(raw, self.encoding))
+            txns, skipped = _extract_transactions(rows)
+            if not txns:
+                raise UserError(_(
+                    "No transactions found. Check the report columns."))
+            return {'txns': txns, 'skipped': skipped,
+                    'accounts': [], 'as_of': None}
+        except ValueError as exc:
+            raise UserError(str(exc))
 
     def _build_actuals_csv(self, txns, skipped):
         """Serialize already-parsed txn rows via the common path."""
@@ -987,6 +1139,186 @@ class QboActualsTransformWizard(models.TransientModel):
             'min_date': as_of, 'max_date': as_of,
             'skipped': skipped,
         }
+
+    # ==================================================================
+    # Import path — writes to Odoo so the ledger reflects QBO data.
+    # ==================================================================
+    def _import_actuals_to_odoo(self, txns):
+        """Group parsed transaction rows into elks.journal.entry records.
+
+        Dedup strategy: content hash of (date, account, amount) packed
+        into the entry_number field as 'QBO-EXCEL-<12-char-hash>'.
+        Re-importing the same data skips existing hashes.
+
+        Balancing strategy: each parsed row generates a two-leg entry —
+        the hit on the QBO account plus an offsetting leg against the
+        lodge's QBO Import Clearing account (configured in Lodge
+        Settings, defaults to 29999). Entries balance and post
+        automatically. Reconcile the clearing account to zero when the
+        full import run is complete.
+
+        If the clearing account is missing from the CoA, the entry is
+        still created as a single-leg DRAFT (never posted) so nothing
+        disappears, and the stats include a 'needs_clearing' count the
+        treasurer can act on.
+        """
+        from decimal import Decimal, ROUND_HALF_UP
+        import hashlib
+        Entry = self.env['elks.journal.entry']
+        Account = self.env['elks.account']
+        # Resolve clearing account from lodge settings
+        settings = self.env['elks.lodge.settings'].sudo().search(
+            [], limit=1, order='id desc')
+        clearing_code = (settings.qbo_import_clearing_gl_code
+                         if settings else '29999')
+        clearing_acct = Account.sudo().search(
+            [('code', '=', clearing_code),
+             ('subaccount', 'in', (False, ''))], limit=1)
+        # Preload existing account codes keyed by (code, subaccount)
+        existing_accts = {
+            (a.code, (a.subaccount or '')): a
+            for a in Account.sudo().search([])
+        }
+        # Preload existing entry_numbers for dedup
+        existing_numbers = set()
+        for e in Entry.sudo().search_read(
+                [('entry_number', 'like', 'QBO-EXCEL-%')], ['entry_number']):
+            existing_numbers.add(e['entry_number'])
+
+        created = posted = draft = skipped = needs_clearing = 0
+        for t in txns:
+            amt = Decimal(str(t['amount'])).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP)
+            if amt == 0:
+                continue
+            # Split account into base + subaccount
+            acct_raw = t['account']
+            base, sub = acct_raw, ''
+            if len(acct_raw) > 5 and acct_raw[:5].isdigit():
+                base, sub = acct_raw[:5], acct_raw[5:7].upper()
+            acct = existing_accts.get((base, sub)) or existing_accts.get((base, ''))
+            if not acct:
+                # Account not in Odoo — skip for now (treasurer should
+                # run the CoA import first).
+                skipped += 1
+                continue
+            # Content hash for dedup
+            key = f"{t['date'].isoformat()}|{acct_raw}|{amt}"
+            h = hashlib.sha256(key.encode()).hexdigest()[:12]
+            entry_number = f"QBO-EXCEL-{h}"
+            if entry_number in existing_numbers:
+                skipped += 1
+                continue
+            # Primary leg — debit if positive, credit if negative
+            debit = float(amt) if amt > 0 else 0.0
+            credit = float(-amt) if amt < 0 else 0.0
+            lines = [(0, 0, {
+                'account_id': acct.id,
+                'debit': debit,
+                'credit': credit,
+                'memo': f"QBO {acct_raw}",
+            })]
+            # Offsetting leg against clearing account (reverse signs)
+            if clearing_acct:
+                lines.append((0, 0, {
+                    'account_id': clearing_acct.id,
+                    'debit': credit,
+                    'credit': debit,
+                    'memo': f"QBO Import Clearing (offset {acct_raw})",
+                }))
+            else:
+                needs_clearing += 1
+            try:
+                entry = Entry.sudo().create({
+                    'entry_number': entry_number,
+                    'date': t['date'],
+                    'memo': f"Imported from QBO Transaction Detail "
+                            f"({t['date']})",
+                    'line_ids': lines,
+                })
+                existing_numbers.add(entry_number)
+                created += 1
+                # Auto-post when balanced (clearing acct present)
+                if clearing_acct and entry.is_balanced:
+                    try:
+                        entry.action_post()
+                        posted += 1
+                    except Exception as exc:  # noqa: BLE001
+                        _logger.warning(
+                            'Auto-post failed for %s: %s', entry_number, exc)
+                        draft += 1
+                else:
+                    draft += 1
+            except Exception as exc:  # noqa: BLE001
+                _logger.warning('JE create failed for %s: %s', entry_number, exc)
+                skipped += 1
+        _logger.info(
+            'QBO Excel import: %s JEs created (%s posted, %s draft), '
+            '%s skipped, %s need clearing acct.',
+            created, posted, draft, skipped, needs_clearing)
+        return {'created': created, 'posted': posted,
+                'draft': draft, 'skipped': skipped, 'balances': 0,
+                'needs_clearing': needs_clearing,
+                'clearing_code': clearing_code}
+
+    def _import_balance_sheet_to_odoo(self, accounts, as_of):
+        """Cache per-account closing balances on elks.qbo.account.map.
+
+        Feeds the dashboard's 'Bank Accounts' tile without needing an
+        active OAuth connection. Matches QBO account rows to maps
+        by the elks.account code they resolve to.
+
+        If no map row exists for a given code, we create one (parent
+        connection = first active or any connection) so the balance has
+        somewhere to live.
+        """
+        if not accounts:
+            return {'created': 0, 'posted': 0, 'draft': 0,
+                    'skipped': 0, 'balances': 0}
+        Conn = self.env['elks.qbo.connection']
+        Map = self.env['elks.qbo.account.map']
+        Account = self.env['elks.account']
+        conn = Conn.sudo().search([], limit=1)
+        if not conn:
+            # No connection record exists — create a placeholder for
+            # Excel-only imports so the map rows have a parent.
+            conn = Conn.sudo().create({
+                'name': 'Excel Import (no API)',
+                'environment': 'production',
+                'company_id': self.env.company.id,
+            })
+        existing_accts = {
+            (a.code, (a.subaccount or '')): a
+            for a in Account.sudo().search([])
+        }
+        existing_maps = {m.qbo_id: m for m in conn.mapping_ids}
+        updated = 0
+        now = fields.Datetime.now()
+        for a in accounts:
+            acct_raw = a['account']
+            base, sub = acct_raw, ''
+            if len(acct_raw) > 5 and acct_raw[:5].isdigit():
+                base, sub = acct_raw[:5], acct_raw[5:7].upper()
+            acct_rec = existing_accts.get((base, sub)) or existing_accts.get((base, ''))
+            qbo_id = f'EXCEL-{acct_raw}'
+            m = existing_maps.get(qbo_id)
+            if not m:
+                # Synthesize a mapping row so the balance has a home
+                m = Map.sudo().create({
+                    'connection_id': conn.id,
+                    'qbo_id': qbo_id,
+                    'name': (acct_rec.display_name if acct_rec else acct_raw),
+                    'source_type': 'Bank' if base.startswith('10') else '',
+                    'account_id': acct_rec.id if acct_rec else False,
+                })
+                existing_maps[qbo_id] = m
+            m.sudo().write({
+                'last_known_balance': float(a['amount']),
+                'balance_as_of': now,
+            })
+            updated += 1
+        return {'created': 0, 'posted': 0, 'draft': 0,
+                'skipped': 0, 'balances': updated}
 
     # ------------------------------------------------------------------
     # Source branch: Upload (preserves original behavior)
@@ -1085,17 +1417,53 @@ class QboActualsTransformWizard(models.TransientModel):
             'target': 'self',
         }
 
-    def _build_report_html(self, result):
+    def _build_report_html(self, result, import_stats=None):
         skipped = result.get('skipped') or []
-        html = [
-            "<div style='margin-bottom:.5em;'>",
-            f"<strong>Rows emitted:</strong> {result['row_count']}<br/>",
-            f"<strong>Date range:</strong> "
-            f"{result['min_date']} → {result['max_date']}<br/>",
-            f"<strong>Suggested filename:</strong> "
-            f"<code>{result['suggested_filename']}</code>",
-            "</div>",
-        ]
+        html = []
+        if import_stats and (import_stats.get('created') or
+                             import_stats.get('balances')):
+            created = import_stats.get('created', 0)
+            posted = import_stats.get('posted', 0)
+            draft = import_stats.get('draft', 0)
+            dup = import_stats.get('skipped', 0)
+            bal = import_stats.get('balances', 0)
+            html.append(
+                "<div class='alert alert-success' style='padding:.6em 1em;'>"
+                "<strong>Imported into Odoo:</strong> "
+            )
+            parts = []
+            if created:
+                parts.append(f"{created} journal entries created "
+                             f"(<span style='color:#060;'>{posted} posted</span>, "
+                             f"{draft} draft for review)")
+            if bal:
+                parts.append(f"{bal} account balance(s) cached for the dashboard")
+            if dup:
+                parts.append(f"<em>{dup} duplicates skipped</em>")
+            html.append(" · ".join(parts))
+            html.append("</div>")
+            needs = import_stats.get('needs_clearing', 0)
+            if needs:
+                code = import_stats.get('clearing_code', '29999')
+                html.append(
+                    "<div class='alert alert-warning' style='padding:.6em 1em;'>"
+                    f"<strong>{needs} entries left as unbalanced drafts.</strong> "
+                    f"Clearing account <code>{code}</code> wasn't found in the "
+                    "Elks Chart of Accounts — create it (or change the code in "
+                    "Lodge Settings), then re-run the import to balance and "
+                    "auto-post."
+                    "</div>"
+                )
+        if result.get('csv_bytes'):
+            html.append(
+                "<div style='margin-bottom:.5em;'>"
+                f"<strong>CSV rows:</strong> {result['row_count']}<br/>"
+                f"<strong>Date range:</strong> "
+                f"{result.get('min_date')} → {result.get('max_date')}<br/>"
+                f"<strong>Suggested filename:</strong> "
+                f"<code>{result['suggested_filename']}</code>"
+                "</div>"
+            )
         if skipped:
             html.append(f"<details><summary>Skipped rows ({len(skipped)})</summary>")
             html.append("<table class='table table-sm' style='font-size:.85em;'>")

@@ -68,6 +68,14 @@ class ElksJournalEntry(models.Model):
         help="Elks fiscal year, e.g. 2025-2026 for April 2025 – March 2026.",
     )
 
+    # Reconciliation to PO (audit trail link)
+    purchase_id = fields.Many2one(
+        "purchase.order", string="Matched PO", tracking=True, copy=False,
+        index=True,
+        help="Purchase order this journal entry settles. Used for the audit "
+             "trail: ties the ledger activity back to the approved PO.",
+    )
+
     @api.depends("entry_number", "date")
     def _compute_name(self):
         for rec in self:
@@ -113,6 +121,41 @@ class ElksJournalEntry(models.Model):
 
     def action_draft(self):
         self.write({"state": "draft"})
+
+    def action_match_po(self):
+        """Open the PO match wizard pre-filtered by this entry's amount/date."""
+        self.ensure_one()
+        amount = self.total_debit or self.total_credit or 0.0
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Match PO to Journal Entry'),
+            'res_model': 'elks.journal.po.match.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_entry_id': self.id,
+                'default_amount': amount,
+                'default_date_from': fields.Date.subtract(
+                    self.date or fields.Date.context_today(self), days=30),
+                'default_date_to': fields.Date.add(
+                    self.date or fields.Date.context_today(self), days=30),
+            },
+        }
+
+    def action_open_po(self):
+        self.ensure_one()
+        if not self.purchase_id:
+            return False
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'purchase.order',
+            'view_mode': 'form',
+            'res_id': self.purchase_id.id,
+            'target': 'current',
+        }
+
+    def action_unlink_po(self):
+        self.write({'purchase_id': False})
 
     @api.model_create_multi
     def create(self, vals_list):

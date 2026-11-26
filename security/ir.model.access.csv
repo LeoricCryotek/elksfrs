@@ -60,3 +60,4 @@ qbo_expense_user,QBO expense read,model_elks_qbo_expense,elksfrs.group_elksfrs_u
 qbo_expense_manager,QBO expense manager,model_elks_qbo_expense,elksfrs.group_elksfrs_manager,1,1,1,0
 qbo_expense_admin,QBO expense admin unlink,model_elks_qbo_expense,base.group_system,1,1,1,1
 qbo_match_manager,QBO match wizard,model_elks_qbo_match,elksfrs.group_elksfrs_manager,1,1,1,1
+journal_po_match_wizard_manager,Journal PO match wizard,model_elks_journal_po_match_wizard,elksfrs.group_elksfrs_manager,1,1,1,1
